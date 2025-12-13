@@ -1,0 +1,403 @@
+#!/usr/bin/env python3
+"""
+The script parses ps data collected in a file by the script ha-resourcemon.
+  - https://access.redhat.com/solutions/368393
+
+@author    : Shane Bradley
+@contact   : sbradley@redhat.com
+@version   : 0.1
+@copyright : GPLv2
+"""
+import argparse
+import locale
+import logging
+import logging.handlers
+import os
+import os.path
+import re
+import sys
+import textwrap
+from datetime import datetime
+
+# #####################################################################
+# Global vars:
+# #####################################################################
+VERSION_NUMBER = '0.1-1'
+MAIN_LOGGER_NAME = '%s' % (os.path.basename(sys.argv[0]))
+
+# The date format used in the file before each iteration of the data.
+DT_FORMAT_FILE_CONTENTS = '%a %b %d %H:%M:%S %Y'
+# The format used to display the date.
+DT_FORMAT_OUTPUT = '%Y-%m-%d %H:%M:%S'
+PS_COLUMN_NAMES = {'timestamp': 0, 'USER': 1, 'PID': 2, 'PPID': 3, '%CPU': 4, '%MEM': 5,
+                   'VSZ': 6, 'RSS': 7, 'TT': 8, 'STAT': 9, 'STARTED': 10,
+                   'TIME': 11, 'WCHAN': 12, 'COMMAND': 13}
+REGEX_PROCESSES_STAT_SLEEP_IDLE = '[SI][ s+N<lL][ l+s]'
+REGEX_PROCESSES_STAT_DEFUNCT = 'D'
+
+
+# #####################################################################
+# Helper File Functions
+# ####################################################################
+def get_data_from_file(path_to_filename) :
+    lines = get_data_from_file_as_list(path_to_filename)
+    if lines is not None:
+        data = ''
+        for line in lines:
+            data = '%s%s' % (data, line)
+        return data
+    return None
+
+
+def get_data_from_file_as_list(path_to_filename) :
+    if len(path_to_filename) > 0 :
+        try:
+            with open(path_to_filename, 'r', encoding='utf-8') as fin:
+                lines = fin.readlines()
+                fin.close()
+            data = []
+            for line in lines:
+                line = line.strip()
+                if len(line) > 0:
+                    data.append(line.strip())
+            return data
+        except (IOError, os.error):
+            logging.getLogger(MAIN_LOGGER_NAME).error('An error occured reading the file: %s.' % (path_to_filename))
+    return None
+
+
+def truncate_rows(rows, max_item_length=125):
+    # This function will take a list of lists and remove any whitespaces at
+    # start or end of items in each list. It will also truncate any item that is
+    # longer than max_item_length and will insert into new rows the text longer
+    # than max_item_length.
+
+    # Strip out any white spaces when copying the list into a new list.
+    rows_copy = []
+    for row in rows:
+        new_row = []
+        for i in row:
+            try:
+                new_row.append(i.strip())
+            except AttributeError:
+                new_row.append(i)
+        rows_copy.append(new_row)
+    for row in rows_copy:
+        iindex = 0
+        index_with_long_lines = {}
+        for item in row:
+            if len(str(item)) > max_item_length:
+                index_with_long_lines[iindex] = textwrap.wrap(str(item), max_item_length, break_long_words=False)
+            iindex += 1
+        for key in index_with_long_lines:
+            # Modify the current and change to the shorten version.
+            row[key] = '%s....' % (index_with_long_lines.get(key).pop(0))
+    """
+        # This variable goes before "for row in rows_copy:".
+        rindex = 0
+        # Comment out this section of code that adds an addition line for the rest of the command.
+        # Look over what is left and add new row. Could have multiple items in
+        # new row.
+        insert_after_row = rindex + 1
+        while (index_with_long_lines):
+            new_row = ["-"] * (len(row))
+            for key in list(index_with_long_lines.keys()):
+                # If there is item in list then add to new row.
+                # if the list is empty then remove they key.
+                items = index_with_long_lines.get(key)
+                if (items):
+                    new_row[key] = '\t %s' % (index_with_long_lines.get(key).pop(0))
+                    if (not items):
+                        # Delete the key if nothing is in list.
+                        del index_with_long_lines[key]
+            if (new_row):
+                rows_copy.insert(insert_after_row, new_row)
+                insert_after_row += 1
+        # Increment the row index
+        rindex += 1
+    """  # pylint: disable=W0105
+    return rows_copy
+
+
+def tableize(rows, header):
+    """
+    Prints out a table using the data in `rows`, which is assumed to be a
+    sequence of sequences with the 0th element being the header.
+    https://gist.github.com/lonetwin/4721748
+    """
+    # Formatted string of table data returned.
+    formatted_table = ''
+    if not rows:
+        return formatted_table
+    # Truncate any data in columns.
+    rows_copy = truncate_rows(rows)
+    # Insert the header
+    rows_copy.insert(0, header)
+
+    def __format_item(item):
+        locale.setlocale(locale.LC_NUMERIC, '')
+        try:
+            return str(item)
+        except UnicodeEncodeError:
+            return item.encode('utf-8')
+
+    # Convert all values in rows to strings.
+    if len(rows_copy) > 0:
+        converted_rows_to_str = []
+        for row in rows_copy:
+            current_row = []
+            for item in row:
+                current_row.append(__format_item(item))
+            if len(current_row) > 0:
+                converted_rows_to_str.append(current_row)
+        # Figure out each column widths which is max column size for all rows.
+        widths = [len(max(columns, key=len)) for columns in zip(*converted_rows_to_str)]
+        # Add seperator
+        formatted_table += '-+-'.join('-' * width for width in widths) + '\n'
+        # Add the header
+        header, data = converted_rows_to_str[0], converted_rows_to_str[1:]
+        formatted_table += ' | '.join(format(title, '%ds' % width)for width, title in zip(widths, header)) + '\n'
+        # Add seperator from first row and header.
+        formatted_table += '-+-'.join('-' * width for width in widths) + '\n'
+        count = 0
+        for row in data:
+            row_string = ' | '.join(format(cdata, '%ds' % width) for width, cdata in zip(widths, row))
+            if not row_string.startswith('-'):
+                count = count + 1
+            # Add header ever 40 lines.
+            if (count % 40) == 0:
+                row_string += '\n%s' % ('-+-'.join('-' * width for width in widths))
+                row_string += '\n%s' % (' | '.join(format(title, '%ds' % width)for width, title in zip(widths, header)))
+                row_string += '\n%s' % ('-+-'.join('-' * width for width in widths))
+            formatted_table += row_string + '\n'
+    return formatted_table
+
+
+def __print_colorize_table(tfrmt):
+    index = 1
+    for line in tfrmt.split('\n'):
+        if index == 2 or (((index % 2) != 0) and (not line.startswith('-'))):
+            line = __colorize_line_background(line)
+        print(line)
+        index += 1
+
+
+def __colorize_line_background(text):
+    # Dark Gray = 100
+    # Light Blue = 104
+    # - http://misc.flogisoft.com/bash/tip_colors_and_formatting
+    color_id = '40;100'
+    opencol = '\033['
+    closecol = 'm'
+    color = opencol + color_id + closecol
+    return '%s%s%s' % (color, text, opencol + '0' + closecol)
+
+
+def __colorize_line_foreground(text):
+    # Red = 31
+    color_id = '31'
+    opencol = '\033[1;'
+    closecol = 'm'
+    color = opencol + color_id + closecol
+    return '%s%s%s' % (color, text, opencol + '0' + closecol)
+
+
+# ##############################################################################
+# parse and print data
+# ##############################################################################
+def show_d_state(hostname, data_slices, show_only_defunct_processes=False):
+    # The file is sorted into bins to capture all top data captured at specific time.
+    tkeys = list(data_slices.keys())
+    tkeys.sort()
+    header = []
+    # Go through all the data.
+    for ts_key in tkeys:
+        timestamp = ts_key.strftime(DT_FORMAT_OUTPUT)
+        lines = data_slices.get(ts_key)
+        if not lines:
+            continue
+        if not lines:
+            continue
+        header = ['timestamp']
+        header += lines.pop(0).split()
+        pid_rows = []
+        for line in lines:
+            line = line.strip()
+            if not line:
+                continue
+            # The STARTED column can come in 2 formats that causes issues when trying to split on 'whitespaces'.
+            # USER         PID    PPID %CPU %MEM    VSZ   RSS TT       STAT  STARTED     TIME WCHAN                            COMMAND
+            # root           1       0  0.1  0.0 243604  7168 ?        Ds     Mar 24 00:16:57 alloc_shrinker_info              /usr/lib/systemd/systemd --switched-root --system --deserialize 18
+            # root     4068084       1  0.0  0.1  75412 57908 ?        D<Ls 00:00:01 00:00:22 cgroup_path_ns                   /usr/bin/atop -w /var/log/atop/atop_20240403 600
+
+            # Split the line into 2 parts. Split on column 'STAT' and include -1 because the PS_COLUMN_NAMES includes timestamp
+            # column that currently does not exist.
+            row = [timestamp] + line.split(None, PS_COLUMN_NAMES.get('STAT'))[:PS_COLUMN_NAMES.get('STAT')]
+            line_after_stat = line.split(None, PS_COLUMN_NAMES.get('STAT'))[PS_COLUMN_NAMES.get('STAT'):][0]
+            pattern = re.compile(r'(?P<started>((Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec) ([012][0-9]|30|31))|(\d\d:\d\d:\d\d))(?P<after_started>.*)')
+            search_object = pattern.search(line_after_stat)
+            if search_object:
+                row.append(search_object.group('started'))
+                row += search_object.group('after_started').split(None, 2)
+            # The process 'STAT' is padded with whitespaces for the regex to work in all cases.
+            process_stat = row[PS_COLUMN_NAMES.get('STAT')].ljust(5)
+            # If there is incorrect number of columns then skip.
+            if len(row) == len(list(PS_COLUMN_NAMES.keys())):
+                if show_only_defunct_processes:
+                    # Only include processes that are 'D' state.
+                    pattern = re.compile(REGEX_PROCESSES_STAT_DEFUNCT)
+                    search_object = pattern.search(process_stat)
+                    if not search_object:
+                        continue
+                # If the process is in sleep/idle stat state then skip.
+                if not show_only_defunct_processes:
+                    pattern = re.compile(REGEX_PROCESSES_STAT_SLEEP_IDLE)
+                    search_object = pattern.search(process_stat)
+                    if search_object:
+                        continue
+                pid_rows.append(row)
+        # Pad command header before removing items.
+        if 'COMMAND' in PS_COLUMN_NAMES:
+            header[PS_COLUMN_NAMES.get('COMMAND')] = header[PS_COLUMN_NAMES.get('COMMAND')].ljust(125)
+        # Remove columns we are not going to print. They listed in reverse sort so I could remove them last to first.
+        rm_column_names = ['WCHAN', 'TIME', 'STARTED', 'TT', 'RSS', 'VSZ', 'USER']
+        for cname in rm_column_names:
+            if cname in PS_COLUMN_NAMES:
+                header.pop(PS_COLUMN_NAMES.get(cname))
+                for prow in pid_rows:
+                    prow.pop(PS_COLUMN_NAMES.get(cname))
+        # Format and print the rows of ps lines that matched.
+        if pid_rows:
+            print(__colorize_line_foreground('%s @%s | Number of matching processes: %d' % (ts_key, hostname, len(pid_rows))))
+            tfrmt = tableize(pid_rows, header)
+            __print_colorize_table(tfrmt)
+
+
+# ##############################################################################
+# Get user selected options
+# ##############################################################################
+def __get_options() :
+    epilog = ''
+    parseargs_ns = argparse.ArgumentParser(prog=os.path.basename(__file__),
+                                           description='The script outputs formatted top output generated ha-resourcemon',
+                                           epilog=epilog,
+                                           formatter_class=argparse.RawDescriptionHelpFormatter)
+    parseargs_ns.add_argument('-d', '--debug',
+                              action='store_true',
+                              dest='enable_debug',
+                              help='enables debug logging',
+                              default=False)
+    parseargs_ns.add_argument('-q', '--quiet',
+                              action='store_true',
+                              dest='disable_logging',
+                              help='disables logging to console',
+                              default=False)
+    parseargs_ns.add_argument('-p', '--path_to_filename',
+                              action='store',
+                              dest='path_to_src_file',
+                              help='the path to the filename that will be parsed',
+                              type=str,
+                              metavar='<input filename>',
+                              default='')
+    parseargs_ns.add_argument('-D', '--defunct_processes_only',
+                              action='store_true',
+                              dest='show_only_defunct_processes',
+                              help='show only defunct (D state) processes',
+                              default=False)
+    return parseargs_ns.parse_args()
+
+
+# ###############################################################################
+# Main Function
+# ###############################################################################
+def main():
+    # #######################################################################
+    # Get the options from the commandline.
+    # #######################################################################
+    parseargs_ns = __get_options()
+    # #######################################################################
+    # Setup the logger and create config directory
+    # #######################################################################
+    # Create the logger
+    log_level = logging.INFO
+    logger = logging.getLogger(MAIN_LOGGER_NAME)
+    logger.setLevel(log_level)
+    stream_handler = logging.StreamHandler()
+    stream_handler.setLevel(log_level)
+    stream_handler.setFormatter(logging.Formatter('%(levelname)s %(message)s'))
+    logger.addHandler(stream_handler)
+    if parseargs_ns.enable_debug and not parseargs_ns.disable_logging:
+        logging.getLogger(MAIN_LOGGER_NAME).setLevel(logging.DEBUG)
+        stream_handler.setLevel(logging.DEBUG)
+        message = 'Debugging has been enabled.'
+        logging.getLogger(MAIN_LOGGER_NAME).debug(message)
+    if parseargs_ns.disable_logging:
+        stream_handler.setLevel(logging.CRITICAL)
+
+    # #######################################################################
+    # Check options
+    # #######################################################################
+    if not parseargs_ns.path_to_src_file:
+        message = 'A path to the file is required with the -p option.'
+        logging.getLogger(MAIN_LOGGER_NAME).error(message)
+        sys.exit(1)
+    elif not os.path.isfile(parseargs_ns.path_to_src_file):
+        message = 'The path does not exist or is not a file: %s' % (parseargs_ns.path_to_src_file)
+        logging.getLogger(MAIN_LOGGER_NAME).error(message)
+        sys.exit(1)
+
+    # #######################################################################
+    # Run main
+    # #######################################################################
+    message = 'Analyzing the file: %s' % (parseargs_ns.path_to_src_file)
+    logging.getLogger(MAIN_LOGGER_NAME).debug(message)
+
+    # filename: node42-20170820-230101-info-top.log
+    split_filename = parseargs_ns.path_to_src_file.rsplit('-', 5)
+    hour = split_filename[2][:2]
+    # Need to only capture data within that hour.
+    data_slices = {}
+    last_timestamp = ''
+    hostname = ''
+    for line in get_data_from_file_as_list(parseargs_ns.path_to_src_file):
+        line = line.strip()
+        if line.startswith('#'):
+            if line.find('#UNAME') >= 0:
+                hostname = line.split('#UNAME=')[1].split()[1]
+            continue
+        # The regex for find date and time the output of data was created.
+        rem = re.compile('^(?P<day>mon|tue|wed|thu|fri|sat|sun) .*')
+        match_object = rem.match(line.lower())
+        # Check if date/time line.
+        if match_object:
+            linesplit = line.split()
+            linesplit[2] = '%02d' % (int(linesplit[2]))
+            linesplit.pop(4)
+            line = ' '.join(linesplit)
+            date_time = datetime.strptime(line, DT_FORMAT_FILE_CONTENTS)
+            if hour == date_time.strftime('%H'):
+                last_timestamp = date_time
+                data_slices[last_timestamp] = []
+            else:
+                last_timestamp = None
+        elif last_timestamp:
+            # Add all the lines for the current timestamp.
+            data_slices[last_timestamp].append(line)
+    # Print all the iterations.
+    show_d_state(hostname, data_slices, show_only_defunct_processes=parseargs_ns.show_only_defunct_processes)
+
+
+# ###############################################################################
+# Run main()
+# ###############################################################################
+if __name__ == '__main__':
+    try:
+        main()
+    except KeyboardInterrupt:
+        print('')
+        logging.getLogger(MAIN_LOGGER_NAME).error('This script will exit since control-c was executed by end user.')
+        sys.exit(1)
+    # #######################################################################
+    # Exit the application with zero exit code since we cleanly exited.
+    # #######################################################################
+    sys.exit()

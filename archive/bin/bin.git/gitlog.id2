@@ -1,0 +1,10 @@
+#!/bin/bash
+branch=$1
+
+if test "x$branch" = x; then
+    branch=`git branch -a | grep "*" | cut -d ' ' -f2`
+fi
+
+tracking=`git rev-parse --abbrev-ref --symbolic-full-name @{u}`
+
+git log --reverse --abbrev-commit --pretty=oneline $tracking..$branch | cut -d ' ' -f1 |paste -s -d ' '
