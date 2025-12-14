@@ -16,22 +16,9 @@ alias killMenuBar="killall -KILL SystemUIServer";
 ##############################################################################
 # Which command in osx does not have many options.
 alias which="which -a ";
-
 # Eject commands
 alias eject="drutil eject"
 alias opentray="drutil tray open"
-
-# Emacs commands
-if [ -f /usr/local/bin/emacs ]; then
-    # If different version of emacs is installed.
-    alias emacs='/usr/local/bin/emacs -nw'
-    alias emacsclient='/usr/local/bin/emacsclient'
-    alias emacsd_load='sudo launchctl load -w /Library/LaunchAgents/gnu.emacs.daemon.plist'
-    alias emacsd_unload='emacsd_stop; sudo launchctl unload -w /Library/LaunchAgents/gnu.emacs.daemon.plist'
-else
-    alias emacs='emacs -nw'
-fi
-
 # Recursively delete .DS_Store files
 alias findDS_Store="find . -type f -name '*.DS_Store'"
 # Recursively delete .DS_Store files
@@ -61,18 +48,7 @@ alias spoton="sudo mdutil -a -i on"
 alias rdrestart="sudo /System/Library/CoreServices/RemoteManagement/ARDAgent.app/Contents/Resources/kickstart -restart -agent"
 
 ##############################################################################
-# Plex aliases
-##############################################################################
-# http://wiki.plexapp.com/index.php/PlexNine_AdvancedInfo#Terminal_Commands
-alias pmscanner="/Applications/Plex\ Media\ Server.app/Contents/MacOS/Plex\ Media\ Scanner";
-alias pmscanner_list="pmscanner --list";
-# Turbo scan: requires a section numbe from pms.
-alias pmscanner_turbosection="pmscanner  --scan --refresh --section ";
-# Deep scan: requires a section numbe from pms.
-alias pmscanner_deepsection="pmscanner --scan --refresh --force --section ";
-
-##############################################################################
-# Plex aliases
+# Yubikey aliases
 ##############################################################################
 alias yubikey_off='osascript -e "tell application \"yubiswitch\" to KeyOff"';
 alias yubikey_on='osascript -e "tell application \"yubiswitch\" to KeyOn"';

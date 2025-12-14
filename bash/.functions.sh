@@ -1,29 +1,4 @@
 #!/bin/sh
-# Functions that are for bash.
-# Some of these function are from here: https://github.com/mathiasbynens/dotfiles/blob/master/.functions
-
-hat() {
-    # $1 is number of lines to print for head and tail output.
-    # prints head and tail. The length of the head is  $1 and length of tail is $1.
-    number_of_lines=5;
-    if [ ! -z "$1" ]; then
-	number_of_lines=$1;
-    fi
-    if [[ ! $number_of_lines =~ [^[:digit:]] ]]
-    then
-	index=0;
-	while read -r line ; do
-	    echo $line;
-	    ((index++))
-	    if [ $index -eq $number_of_lines ]; then
-		echo "[.......]";
-	    fi
-	done < <(awk -v offset="$number_of_lines" '{ if (NR <= offset) print; else { a[NR] = $0; delete a[NR-offset] } } END { for (i=NR-offset+1; i<=NR; i++) print a[i] }');
-    else
-	echo "ERROR: non-digits are not allowed.";
-    fi
-}
-
 
 # Set the colours you can use
 black='\033[0;30m'
@@ -74,49 +49,6 @@ function trim_whitespaces() {
     var="${var%"${var##*[![:space:]]}"}"
     echo -n "$var"
 }
-
-# Simple calculator
-function calc() {
-    local result=""
-    result="$(printf "scale=10;$*\n" | bc --mathlib | tr -d '\\\n')"
-    #                       └─ default (when `--mathlib` is used) is 20
-    if [[ "$result" == *.* ]]; then
-        # improve the output for decimal numbers
-        printf "$result" |
-        sed -e 's/^\./0./'        `# add "0" for cases like ".5"` \
-            -e 's/^-\./-0./'      `# add "0" for cases like "-.5"`\
-    -e 's/0*$//;s/\.$//'   # remove trailing zeros
-    else
-        printf "$result"
-    fi
-    printf "\n"
-}
-
-# Create a .tar.gz archive, using `zopfli`, `pigz` or `gzip` for compression
-#function targz() {
-#    local tmpFile="${@%/}.tar"
-#    tar -cvf "${tmpFile}" --exclude=".DS_Store" "${@}" || return 1
-#    size=$(
-#        stat -f"%z" "${tmpFile}" 2> /dev/null; # OS X `stat`
-#        stat -c"%s" "${tmpFile}" 2> /dev/null # GNU `stat`
-#    )
-#    local cmd=""
-#    if (( size < 52428800 )) && hash zopfli 2> /dev/null; then
-#        # the .tar file is smaller than 50 MB and Zopfli is available; use it
-#        cmd="zopfli"
-#        else
-#        if hash pigz 2> /dev/null; then
-#            cmd="pigz"
-#        else
-#            cmd="gzip"
-#        fi
-#    fi
-
-#    echo "Compressing .tar using \`${cmd}\`…"
-#    "${cmd}" -v "${tmpFile}" || return 1
-#    [ -f "${tmpFile}" ] && rm "${tmpFile}"
-#    echo "${tmpFile}.gz created successfully."
-#}
 
 # Determine size of a file or total size of a directory
 function filesize() {

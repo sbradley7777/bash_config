@@ -68,31 +68,6 @@ alias pscpu='ps auxf | sort -nr -k 3';
 alias pscpu10='ps auxf | sort -nr -k 3 | head -10';
 
 ##############################################################################
-# bugzilla
-##############################################################################
-if [[ `type bugzilla &> /dev/null` -eq "0" ]] ; then
-
-    # Query to list only the new bugs.
-    alias bz-sos_new_6='bugzilla --ensure-logged-in query --product "Red Hat Enterprise Linux 6" --component sos -t NEW --outputformat "%{id} | %{bug_status} | %{assigned_to} | %{short_desc}"';
-    alias bz-sos_new_7='bugzilla --ensure-logged-in query --product "Red Hat Enterprise Linux 7" --component sos -t NEW --outputformat "%{id} | %{bug_status} | %{assigned_to} | %{short_desc}"';
-    alias bz-sos_new='bugzilla --ensure-logged-in query --product "Red Hat Enterprise Linux 6","Red Hat Enterprise Linux 7" --component sos -t NEW --outputformat "%{id} | %{bug_status} | %{assigned_to} | %{short_desc}" | sort -k 2';
-
-    # Query that shows all that are not closed.
-    alias bz-sos_6='bugzilla --ensure-logged-in query --product "Red Hat Enterprise Linux 6" --component sos -t NEW,ASSIGNED,POST,MODIFIED,ON_DEV,ON_QA --outputformat "%{id} | %{bug_status} | %{assigned_to} | %{short_desc}"';
-    alias bz-sos_7='bugzilla --ensure-logged-in query --product "Red Hat Enterprise Linux 7" --component sos -t NEW,ASSIGNED,POST,MODIFIED,ON_DEV,ON_QA --outputformat "%{id} | %{bug_status} | %{assigned_to} | %{short_desc}"';
-
-    # Query that includes flags to see what acks they have.
-    alias bz-sos_acks_6='bugzilla --ensure-logged-in query --product "Red Hat Enterprise Linux 6" --component sos -t NEW,ASSIGNED,POST,MODIFIED,ON_DEV,ON_QA --outputformat "%{id} | %{bug_status} | %{assigned_to} | %{short_desc} | %{flags}"'
-    alias bz-sos_acks_7='bugzilla --ensure-logged-in query --product "Red Hat Enterprise Linux 7" --component sos -t NEW,ASSIGNED,POST,MODIFIED,ON_DEV,ON_QA --outputformat "%{id} | %{bug_status} | %{assigned_to} | %{short_desc} | %{flags}"'
-
-    # Markdown formatted
-    alias bz-sos_md_6='bugzilla --ensure-logged-in query --product "Red Hat Enterprise Linux 6" --component sos -t NEW,ASSIGNED,POST,MODIFIED,ON_DEV,ON_QA --outputformat "* [%{id} - %{short_desc}](https://bugzilla.redhat.com/show_bug.cgi?id=%{id})"';
-    alias bz-sos_md_7='bugzilla --ensure-logged-in query --product "Red Hat Enterprise Linux 7" --component sos -t NEW,ASSIGNED,POST,MODIFIED,ON_DEV,ON_QA --outputformat "* [%{id} - %{short_desc}](https://bugzilla.redhat.com/show_bug.cgi?id=%{id})"';
-
-    alias bz-sos__rpl_6.8='bugzilla --ensure-logged-in query --assigned_to sbradley@redhat.com --blocked 1274384 --outputformat "%{id} | %{component} | %{bug_status} | %{assigned_to} | %{short_desc}"';
-fi
-
-##############################################################################
 # git
 ##############################################################################
 alias kernel_patch_history_rhel6='git log --reverse --abbrev-commit --pretty=oneline origin/master |grep -i -e "tagging" -e "gfs2" -e "dlm"|less';

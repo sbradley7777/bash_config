@@ -10,20 +10,6 @@ history_no_timestamp() {
 alias historyco=history_no_timestamp;
 
 #################################################################################
-# Aliases for screen
-#################################################################################
-alias screenls="screen -ls";
-alias screenreattach="screen -a -r";
-
-#################################################################################
-# Networking
-#################################################################################
-alias getMyIPv1="curl ifconfig.me";
-alias getMyIPv2="dig +short myip.opendns.com @resolver1.opendns.com";
-alias network_localdevices="arp -na";
-alias network_localdevices_snmp="snmptable -v 2c -c public 192.168.1.1 ipNetToMedia";
-
-#################################################################################
 # File navigation, stats, or modification
 #################################################################################
 # Make console navigation easier.
@@ -70,11 +56,6 @@ alias la="ls -la";
 alias ll='ls -lh';
 # List only directories
 alias lsd='ls -l | grep "^d"';
-
-#################################################################################
-# Misc
-#################################################################################
-alias clfu='~/python/clfu/clfu.py';
 
 #################################################################################
 # Aliases for root user
