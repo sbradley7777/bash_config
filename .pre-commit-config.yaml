@@ -1,0 +1,41 @@
+---
+##############################################################################
+# Hooks
+##############################################################################
+repos:
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v5.0.0
+    hooks:
+      - id: check-added-large-files
+        description: "Prevent giant files from being committed."
+      - id: requirements-txt-fixer
+        description: "Sorts entries in requirements.txt."
+      - id: check-executables-have-shebangs
+        description: "Ensures that (non-binary) executables have a shebang."
+      - id: trailing-whitespace
+        description: "Trims trailing whitespace."
+      - id: end-of-file-fixer
+        description: "Makes sure files end in a newline and only a newline"
+      - id: detect-private-key
+        description: "Checks for the existence of private keys."
+
+  - repo: https://github.com/shellcheck-py/shellcheck-py
+    rev: v0.10.0.1
+    hooks:
+      - id: shellcheck
+        description: "The utility shellcheck is a static analysis tool for shell scripts."
+        args: ["--exclude=SC1091"]
+
+  - repo: https://github.com/openstack-dev/bashate.git
+    rev: 2.1.1
+    hooks:
+      - id: bashate
+        description: "The utility bashate is an automated style checker for bash scripts "
+        args: ["--ignore=E006", '--max-line-length', '127']
+
+  - repo: https://github.com/codespell-project/codespell
+    rev: v2.4.1
+    hooks:
+      - id: codespell
+        description: "Fix common misspellings in text files (including source code)."
+        args: ["-f"]
