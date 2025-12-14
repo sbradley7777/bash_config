@@ -62,34 +62,34 @@ Utility scripts will be available at `~/bin/bin.github/`.
 
 ## Featured Utility Scripts
 
-The **[bin/](https://github.com/sbradley7777/bash_config/tree/master/bin)** directory includes 15+ utility scripts for common tasks:
+The **[`bin/`](https://github.com/sbradley7777/bash_config/tree/master/bin)** directory includes 15+ utility scripts for common tasks:
 
 **File Operations:**
-- **[dusize.sh](https://github.com/sbradley7777/bash_config/blob/master/bin/dusize.sh)** - Display directory sizes in human-readable format
-- **[convert-bytes.sh](https://github.com/sbradley7777/bash_config/blob/master/bin/convert-bytes.sh)** - Convert bytes to human-readable units
+- **[`dusize.sh`](https://github.com/sbradley7777/bash_config/blob/master/bin/dusize.sh)** - Display directory sizes in human-readable format
+- **[`convert-bytes.sh`](https://github.com/sbradley7777/bash_config/blob/master/bin/convert-bytes.sh)** - Convert bytes to human-readable units
 
 **Network Tools:**
-- **[check_ssl.sh](https://github.com/sbradley7777/bash_config/blob/master/bin/check_ssl.sh)** - Test SSL/TLS protocol versions on remote servers
-- **[gethostip.sh](https://github.com/sbradley7777/bash_config/blob/master/bin/gethostip.sh)** - Resolve hostname to IP address
-- **[getdstip.sh](https://github.com/sbradley7777/bash_config/blob/master/bin/getdstip.sh)** - Get destination IP from network routes
-- **[ping-test.sh](https://github.com/sbradley7777/bash_config/blob/master/bin/ping-test.sh)** - Advanced ping testing utility
+- **[`check_ssl.sh`](https://github.com/sbradley7777/bash_config/blob/master/bin/check_ssl.sh)** - Test SSL/TLS protocol versions on remote servers
+- **[`gethostip.sh`](https://github.com/sbradley7777/bash_config/blob/master/bin/gethostip.sh)** - Resolve hostname to IP address
+- **[`getdstip.sh`](https://github.com/sbradley7777/bash_config/blob/master/bin/getdstip.sh)** - Get destination IP from network routes
+- **[`ping-test.sh`](https://github.com/sbradley7777/bash_config/blob/master/bin/ping-test.sh)** - Advanced ping testing utility
 
 **Development Tools:**
-- **[findregexs.sh](https://github.com/sbradley7777/bash_config/blob/master/bin/findregexs.sh)** - Search for regex patterns across files
-- **[prefix_space.sh](https://github.com/sbradley7777/bash_config/blob/master/bin/prefix_space.sh)** - Add leading spaces to file lines
-- **[today.sh](https://github.com/sbradley7777/bash_config/blob/master/bin/today.sh)** - Display current date and time information
+- **[`findregexs.sh`](https://github.com/sbradley7777/bash_config/blob/master/bin/findregexs.sh)** - Search for regex patterns across files
+- **[`prefix_space.sh`](https://github.com/sbradley7777/bash_config/blob/master/bin/prefix_space.sh)** - Add leading spaces to file lines
+- **[`today.sh`](https://github.com/sbradley7777/bash_config/blob/master/bin/today.sh)** - Display current date and time information
 
 **System Administration:**
-- **[convert-audit_timestamps.sh](https://github.com/sbradley7777/bash_config/blob/master/bin/convert-audit_timestamps.sh)** - Convert audit log timestamps
-- **[convert-blocks_to_gigabytes.sh](https://github.com/sbradley7777/bash_config/blob/master/bin/convert-blocks_to_gigabytes.sh)** - Convert disk blocks to GB
-- **[hosts-generator.sh](https://github.com/sbradley7777/bash_config/blob/master/bin/hosts-generator.sh)** - Generate /etc/hosts entries
+- **[`convert-audit_timestamps.sh`](https://github.com/sbradley7777/bash_config/blob/master/bin/convert-audit_timestamps.sh)** - Convert audit log timestamps
+- **[`convert-blocks_to_gigabytes.sh`](https://github.com/sbradley7777/bash_config/blob/master/bin/convert-blocks_to_gigabytes.sh)** - Convert disk blocks to GB
+- **[`hosts-generator.sh`](https://github.com/sbradley7777/bash_config/blob/master/bin/hosts-generator.sh)** - Generate /etc/hosts entries
 
 **Package Management (RPM):**
-- **[rpm-source.sh](https://github.com/sbradley7777/bash_config/blob/master/bin/rpm-source.sh)** - Download RPM source packages
-- **[rpmxtract.sh](https://github.com/sbradley7777/bash_config/blob/master/bin/rpmxtract.sh)** - Extract files from RPM packages
+- **[`rpm-source.sh`](https://github.com/sbradley7777/bash_config/blob/master/bin/rpm-source.sh)** - Download RPM source packages
+- **[`rpmxtract.sh`](https://github.com/sbradley7777/bash_config/blob/master/bin/rpmxtract.sh)** - Extract files from RPM packages
 
 **Documentation:**
-- **[convert-manpages.sh](https://github.com/sbradley7777/bash_config/blob/master/bin/convert-manpages.sh)** - Convert man pages to text format
+- **[`convert-manpages.sh`](https://github.com/sbradley7777/bash_config/blob/master/bin/convert-manpages.sh)** - Convert man pages to text format
 
 All scripts include comprehensive help documentation accessible with the `-h` flag.
 

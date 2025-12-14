@@ -29,12 +29,12 @@ bash/
 ```
 
 **Direct links:**
-- **[.bash_profile](https://github.com/sbradley7777/bash_config/blob/master/bash/.bash_profile)** - Login shell configuration
-- **[.bashrc](https://github.com/sbradley7777/bash_config/blob/master/bash/.bashrc)** - Interactive shell configuration
-- **[.aliases.linux](https://github.com/sbradley7777/bash_config/blob/master/bash/.aliases.linux)** - Linux-specific aliases
-- **[.aliases.macos](https://github.com/sbradley7777/bash_config/blob/master/bash/.aliases.macos)** - macOS-specific aliases
-- **[.functions.sh](https://github.com/sbradley7777/bash_config/blob/master/bash/.functions.sh)** - Universal shell functions
-- **[.functions-macos.sh](https://github.com/sbradley7777/bash_config/blob/master/bash/.functions-macos.sh)** - macOS-specific functions
+- **[`.bash_profile`](https://github.com/sbradley7777/bash_config/blob/master/bash/.bash_profile)** - Login shell configuration
+- **[`.bashrc`](https://github.com/sbradley7777/bash_config/blob/master/bash/.bashrc)** - Interactive shell configuration
+- **[`.aliases.linux`](https://github.com/sbradley7777/bash_config/blob/master/bash/.aliases.linux)** - Linux-specific aliases
+- **[`.aliases.macos`](https://github.com/sbradley7777/bash_config/blob/master/bash/.aliases.macos)** - macOS-specific aliases
+- **[`.functions.sh`](https://github.com/sbradley7777/bash_config/blob/master/bash/.functions.sh)** - Universal shell functions
+- **[`.functions-macos.sh`](https://github.com/sbradley7777/bash_config/blob/master/bash/.functions-macos.sh)** - macOS-specific functions
 
 ## Core Configuration Files
 
@@ -43,10 +43,10 @@ bash/
 The login shell configuration file. Sourced when you log in to the system.
 
 **What it configures:**
-- Environment variables (VISUAL, EDITOR, GREP_COLOR)
+- Environment variables (`VISUAL`, `EDITOR`, `GREP_COLOR`)
 - Shell history settings (unlimited history, ignore duplicates)
 - Shell options (enable histappend)
-- PATH configuration (adds ~/bin if it exists)
+- PATH configuration (adds `~/bin` if it exists)
 - Sources `.bashrc` for interactive shell settings
 
 **Key settings:**
@@ -89,7 +89,7 @@ Linux-specific aliases and settings.
 macOS-specific aliases and settings.
 
 **Includes:**
-- `ls` with color support using `-G` flag (BSD ls)
+- `ls` with color support using `-G` flag (BSD `ls`)
 - macOS-specific utilities (like `md5` vs `md5sum`)
 - Homebrew-related shortcuts
 - macOS system commands
@@ -170,7 +170,7 @@ source ~/.bash_profile
 
 To add personal configuration that won't be tracked by git:
 
-1. Create a `.bashrc.local` or `.bash_profile.local` file in your home directory
+1. Create a `.bashrc.priv` or `.bash_profile.priv` file in your home directory
 2. The main configuration files will automatically source these if they exist
 3. Add your personal aliases, functions, and settings there
 
