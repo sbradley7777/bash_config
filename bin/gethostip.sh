@@ -1,44 +1,77 @@
 #!/bin/bash
-######################################################################
-# gethostip.sh
 #
-# Author: Shane Bradley
+# Description:
+#   Query a remote host's IP address via an intermediate host.
+#   SSH into a source host, then query that host for the IP address of a
+#   destination host on its internal network. Useful for accessing VMs with
+#   dynamic external IPs but static internal IPs.
+#
+# Usage:
+#   gethostip.sh [-h] -s <source_host> -m <dest_host>
+#
+# Options:
+#   -h    Show this help message and exit
+#   -s    Source host to SSH into (the host that can reach the destination)
+#   -m    Destination host whose IP address will be queried
+#
+# Examples:
+#   $ ./gethostip.sh -s hypervisor.example.com -m vm1
+#   192.168.122.100
+#   $ ./gethostip.sh -s jumphost -m internal-server
+#   10.0.1.50
+#
+# Dependencies:
+#   - ssh
+#   - getdstip.sh (must be installed on source host at $HOME/bin/bin.utils/)
+#
+# Exit Codes:
+#   0    Success - IP address retrieved
+#   1    Error - missing arguments or connection failed
+#
 
-# Description: This script will ssh into a host, then will ssh into another host
-#              to print to console the ip. This is useful to query a host of
-#              virtual machines on internal lan then have the external ip of the
-#              virtual machine returned. This makes ssh'ing into virtual machine
-#              automated where the internal ip is static and external ip is
-#              dynamic.
-
-# usage:
-# $ gethostip.sh -s somehost -m somevm
-######################################################################
-
+################################################################################
+# Functions
+################################################################################
 usage() {
-    cat <<EOF
-usage: $0 -s <host of vms> -m <vm host>
+    cat << EOF
+Usage: $(basename "$0") [-h] -s <source_host> -m <dest_host>
 
-This script will clone the git repo or update the git repo, then it will reinstall configuration.
+Description:
+  Query a remote host's IP address via an intermediate host.
+  SSH into a source host, then query that host for the IP address of a
+  destination host on its internal network.
 
-OPTIONS:
-   -h      Show this message
-   -s      Host that will query for a ip of another hosts on its internal lan
-   -m      The host that will be queried.
+Options:
+  -h    Show this help message and exit
+  -s    Source host to SSH into (the host that can reach the destination)
+  -m    Destination host whose IP address will be queried
 
-EXAMPLE:
-$ $0 -s somehost -m somevm
-
+Examples:
+  $ $(basename "$0") -s hypervisor.example.com -m vm1
+  192.168.122.100
+  $ $(basename "$0") -s jumphost -m internal-server
+  10.0.1.50
 EOF
 }
 
+error_exit() {
+    local message="$1"
+    local exit_code="${2:-1}"
+    echo "ERROR: $message" >&2
+    exit "$exit_code"
+}
+
+################################################################################
+# Parse Command-Line Options
+################################################################################
 src_host=
 dst_host=
-while getopts "hs:m:v" opt; do
-    case $opt in
+
+while getopts ":hs:m:" opt; do
+    case "$opt" in
         h)
             usage
-            exit 1
+            exit 0
             ;;
         s)
             src_host=$OPTARG
@@ -46,22 +79,30 @@ while getopts "hs:m:v" opt; do
         m)
             dst_host=$OPTARG
             ;;
-        ?)
+        \?)
+            echo "ERROR: Invalid option: -$OPTARG" >&2
             usage
-            exit
+            exit 1
+            ;;
+        :)
+            echo "ERROR: Option -$OPTARG requires an argument" >&2
+            usage
+            exit 1
             ;;
     esac
 done
 
-if [[ -z $src_host ]] || [[ -z $dst_host ]]; then
-    usage
-    exit 1
-fi
+################################################################################
+# Input Validation
+################################################################################
+[[ -n "$src_host" ]] || error_exit "Missing required option: -s <source_host>"
+[[ -n "$dst_host" ]] || error_exit "Missing required option: -m <dest_host>"
 
-######################################################################
-# Main
-######################################################################
+################################################################################
+# Main Execution
+################################################################################
 # shellcheck disable=SC2029
 dst_ip=$(ssh "$src_host" "\$HOME/bin/bin.utils/getdstip.sh $dst_host 2> /dev/null")
 echo "$dst_ip"
+
 exit 0

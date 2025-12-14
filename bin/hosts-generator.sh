@@ -1,95 +1,148 @@
 #!/bin/bash
-######################################################################
-# gethostip.sh
 #
-# Author: Shane Bradley
+# Description:
+#   Generate a hosts file by querying multiple remote hosts for their IP addresses.
+#   SSH into each specified host to get its IP address and write hostname/IP
+#   mappings to ~/.hosts file. Backs up existing file before overwriting.
+#
+# Usage:
+#   hosts-generator.sh [-h] -n <hostname1> [hostname2 ...]
+#
+# Options:
+#   -h    Show this help message and exit
+#   -n    Hostname(s) to query (can specify multiple)
+#
+# Examples:
+#   $ ./hosts-generator.sh -n server1
+#   $ ./hosts-generator.sh -n server1 server2 server3
+#   $ ./hosts-generator.sh -n vm1 vm2 vm3
+#
+# Dependencies:
+#   - ssh
+#   - ping
+#   - getdstip.sh (must be installed on each target host at $HOME/bin/bin.utils/)
+#
+# Notes:
+#   - Creates/overwrites ~/.hosts file
+#   - Existing ~/.hosts is backed up to ~/.hosts.bk
+#   - Only includes hosts that are reachable and have valid IP addresses
+#
+# Exit Codes:
+#   0    Success
+#   1    Error - missing arguments
+#
 
-# Description: This script will ssh into a host to get the ip address for eth0.
+################################################################################
+# Constants
+################################################################################
+readonly HOST_FILE="$HOME/.hosts"
 
-# usage:
-# $ gethostip.sh -n <hostname>
-######################################################################
-
-host_file=$HOME/.hosts
+################################################################################
+# Functions
+################################################################################
 usage() {
-    cat <<EOF
-usage: $0 -n <hostname>
+    cat << EOF
+Usage: $(basename "$0") [-h] -n <hostname1> [hostname2 ...]
 
-This script will ssh into a host to get the ip address for eth0.
+Description:
+  Generate a hosts file by querying multiple remote hosts for their IP addresses.
 
-OPTIONS:
-   -h      Show this message
-   -n      Hostname that will be ssh into to get the ip address for eth0.
+Options:
+  -h    Show this help message and exit
+  -n    Hostname(s) to query (can specify multiple)
 
-EXAMPLE:
-$ $0 -n <hostname>
-
+Examples:
+  $ $(basename "$0") -n server1
+  $ $(basename "$0") -n server1 server2 server3
+  $ $(basename "$0") -n vm1 vm2 vm3
 EOF
 }
 
-declare -a nargs=()
+error_exit() {
+    local message="$1"
+    local exit_code="${2:-1}"
+    echo "ERROR: $message" >&2
+    exit "$exit_code"
+}
 
+# Read multiple arguments after -n option
 read_n_args() {
     while (($#)) && [[ $1 != -* ]]; do
-        nargs+=("$1")
+        hostnames+=("$1")
         shift
     done
 }
 
-# Verify that the parameter passed is an IP Address:
+# Validate IP address format and range
 valid_ip() {
-    if [[ $(echo "$1" | grep -o '\.' | wc -l) -ne 3 ]]; then
-        exit 1
-    elif [[ $(echo "$1" | tr '.' ' ' | wc -w) -ne 4 ]]; then
-        exit 1
-    else
-        for octet in $(echo "$1" | tr '.' ' '); do
-            if ! [[ $octet =~ ^[0-9]+$ ]]; then
-                exit 1
-            elif [[ $octet -lt 0 || $octet -gt 255 ]]; then
-                exit 1
-            fi
-        done
+    local ip="$1"
+
+    # Check for exactly 3 dots
+    if [[ $(echo "$ip" | grep -o '\.' | wc -l) -ne 3 ]]; then
+        return 1
     fi
+
+    # Check for exactly 4 octets
+    if [[ $(echo "$ip" | tr '.' ' ' | wc -w) -ne 4 ]]; then
+        return 1
+    fi
+
+    # Validate each octet
+    for octet in $(echo "$ip" | tr '.' ' '); do
+        if ! [[ $octet =~ ^[0-9]+$ ]]; then
+            return 1
+        fi
+        if [[ $octet -lt 0 || $octet -gt 255 ]]; then
+            return 1
+        fi
+    done
+
     return 0
 }
 
-while getopts "hn:v" opt; do
-    case $opt in
+################################################################################
+# Parse Command-Line Options
+################################################################################
+declare -a hostnames=()
+
+while getopts ":hn:" opt; do
+    case "$opt" in
         h)
             usage
-            exit 1
+            exit 0
             ;;
         n)
             read_n_args "${@:2}"
             ;;
-        ?)
+        \?)
+            echo "ERROR: Invalid option: -$OPTARG" >&2
             usage
-            exit
+            exit 1
             ;;
     esac
 done
 
-if [[ ${#nargs[@]} -eq 0 ]]; then
-    usage
-    exit 1
+################################################################################
+# Input Validation
+################################################################################
+[[ ${#hostnames[@]} -gt 0 ]] || error_exit "Missing required option: -n <hostname>"
+
+################################################################################
+# Main Execution
+################################################################################
+# Backup existing hosts file if it exists
+if [[ -f "$HOST_FILE" ]]; then
+    mv "$HOST_FILE" "$HOST_FILE.bk"
 fi
 
-######################################################################
-# Main
-######################################################################
-if [[ -f $host_file ]]; then
-    mv "$host_file" "$host_file.bk"
-fi
+# Query each host for its IP address
+for hostname in "${hostnames[@]}"; do
+    if ping -q -c 1 "$hostname" &>/dev/null; then
+        ip_address=$(ssh -q "$hostname" "\$HOME/bin/bin.utils/getdstip.sh $hostname")
 
-for h in "${nargs[@]}"; do
-    if ping -q -c 1 "$h" &>/dev/null; then
-        dst_ip=$(ssh -q "$h" "\$HOME/bin/bin.utils/getdstip.sh $h")
-        if valid_ip "$dst_ip"; then
-            echo "$h $dst_ip" >> "$host_file"
+        if valid_ip "$ip_address"; then
+            echo "$hostname $ip_address" >> "$HOST_FILE"
         fi
-    #else
-    #    echo "WARNING: The host could not be reached: $h."
     fi
 done
 
