@@ -1,67 +1,67 @@
-#!/bin/sh
+#!/bin/bash
 
-#################################################################################
+################################################################################
 # Generic aliases
-#################################################################################
-alias today="date '+%F_%s'";
+################################################################################
+alias today="date '+%F_%s'"
 history_no_timestamp() {
     history | awk '{$1=$2=$3=$4=$5=""}1 ' | sed -e 's/^[[:space:]]*//';
 }
-alias historyco=history_no_timestamp;
+alias historyco=history_no_timestamp
 
-#################################################################################
+################################################################################
 # File navigation, stats, or modification
-#################################################################################
+################################################################################
 # Make console navigation easier.
-alias ..="cd ..";
-alias ...="cd ../..";
-alias ....="cd ../../..";
-alias .....="cd ../../../..";
-alias df="df -h";
-alias du="du -h";
-alias dd1GB="dd if=/dev/zero of=$HOME/test-1GB.txt bs=1024 count=0 seek=$[1024*1000]";
+alias ..="cd .."
+alias ...="cd ../.."
+alias ....="cd ../../.."
+alias .....="cd ../../../.."
+alias df="df -h"
+alias du="du -h"
+alias dd1GB="dd if=/dev/zero of=\$HOME/test-1GB.txt bs=1024 count=0 seek=\$[1024*1000]"
 
-#################################################################################
+################################################################################
 # Extract Files
-#################################################################################
-alias extractall-tar='for i in *.tar; do echo Extracting $i; tar xf $i ; done;';
-alias extractall-tarbz2='for i in *.tar.bz2; do echo Extracting $i; tar jxf $i ; done;';
-alias extractall-targz='for i in *.tar.gz; do echo Extracting $i; tar zxf $i ; done;';
-alias extractall-gz='for i in *.gz; do echo Extracting $i; gunzip -d $i ; done;';
-alias extractall-bz2='for i in *.bz2; do echo Extracting $i; bzip2 -d $i ; done;';
+################################################################################
+alias extractall-tar='for i in *.tar; do echo Extracting $i; tar xf $i ; done;'
+alias extractall-tarbz2='for i in *.tar.bz2; do echo Extracting $i; tar jxf $i ; done;'
+alias extractall-targz='for i in *.tar.gz; do echo Extracting $i; tar zxf $i ; done;'
+alias extractall-gz='for i in *.gz; do echo Extracting $i; gunzip -d $i ; done;'
+alias extractall-bz2='for i in *.bz2; do echo Extracting $i; bzip2 -d $i ; done;'
 
-#################################################################################
+################################################################################
 # Colorize grep searches
-#################################################################################
-alias grep='grep --color=auto';
-alias egrep='egrep --color=auto';
-alias fgrep='fgrep --color=auto';
+################################################################################
+alias grep='grep --color=auto'
+alias egrep='egrep --color=auto'
+alias fgrep='fgrep --color=auto'
 
-#################################################################################
+################################################################################
 # Colorize ls output
-#################################################################################
+################################################################################
 # Detect which `ls` flavor is in use
 if ls --color > /dev/null 2>&1; then # GNU `ls`
-    colorflag="--color";
+    colorflag="--color"
 else # OS X `ls`
-    colorflag="-G";
+    colorflag="-G"
 fi
 # Always use color output for `ls` so no need to specify the flag.
-alias ls="command ls ${colorflag}";
+alias ls="command ls ${colorflag}"
 # List all files colorized in long format
-alias l="ls -l";
+alias l="ls -l"
 # List all files colorized in long format, including dot files
-alias la="ls -la";
+alias la="ls -la"
 # list all files
-alias ll='ls -lh';
+alias ll='ls -lh'
 # List only directories
-alias lsd='ls -l | grep "^d"';
+alias lsd='ls -l | grep "^d"'
 
-#################################################################################
+################################################################################
 # Aliases for root user
-#################################################################################
-if [ $(id -u) -eq 0 ];then
-    alias rm='rm -i';
-    alias cp='cp -i';
-    alias mv='mv -i';
+################################################################################
+if [[ $(id -u) -eq 0 ]]; then
+    alias rm='rm -i'
+    alias cp='cp -i'
+    alias mv='mv -i'
 fi
