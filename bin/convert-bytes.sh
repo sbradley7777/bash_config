@@ -71,21 +71,21 @@ error_exit() {
 # Output:
 #   Prints formatted size to stdout (e.g., "5.00GB", "50.00KB")
 bytes_to_human_readable() {
-    local slist="bytes,KB,MB,GB,TB,PB,EB,ZB,YB"
+    local size_list="bytes,KB,MB,GB,TB,PB,EB,ZB,YB"
     local power=1
-    local val
-    local vint
+    local value
+    local value_int
 
-    val=$(echo "scale=2; $1 / 1" | bc)
-    vint=$(echo "$val / 1024" | bc)
+    value=$(echo "scale=2; $1 / 1" | bc)
+    value_int=$(echo "$value / 1024" | bc)
 
-    while [[ "$vint" -gt 0 ]]; do
-        (( power++ ))
-        val=$(echo "scale=2; $val / 1024" | bc)
-        vint=$(echo "$val / 1024" | bc)
+    while [[ "$value_int" -gt 0 ]]; do
+        power=$(( power + 1 ))
+        value=$(echo "scale=2; $value / 1024" | bc)
+        value_int=$(echo "$value / 1024" | bc)
     done
 
-    echo "${val}$(echo "$slist" | cut -f"$power" -d,)"
+    echo "${value}$(echo "$size_list" | cut -f"$power" -d,)"
 }
 
 ################################################################################

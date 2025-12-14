@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 ######################################################################
 # gethostip.sh
 #
@@ -10,7 +10,7 @@
 # $ gethostip.sh -n <hostname>
 ######################################################################
 
-HOST_FILE=$HOME/.hosts;
+host_file=$HOME/.hosts
 usage() {
     cat <<EOF
 usage: $0 -n <hostname>
@@ -30,45 +30,47 @@ EOF
 declare -a nargs=()
 
 read_n_args() {
-    while (($#)) && [[ $1 != -* ]]; do nargs+=("$1"); shift; done
+    while (($#)) && [[ $1 != -* ]]; do
+        nargs+=("$1")
+        shift
+    done
 }
 
 # Verify that the parameter passed is an IP Address:
-function valid_ip() {
-    if [ `echo $1 | grep -o '\.' | wc -l` -ne 3 ]; then
-        exit 1;
-    elif [ `echo $1 | tr '.' ' ' | wc -w` -ne 4 ]; then
-        exit 1;
+valid_ip() {
+    if [[ $(echo "$1" | grep -o '\.' | wc -l) -ne 3 ]]; then
+        exit 1
+    elif [[ $(echo "$1" | tr '.' ' ' | wc -w) -ne 4 ]]; then
+        exit 1
     else
-        for OCTET in `echo $1 | tr '.' ' '`; do
-            if ! [[ $OCTET =~ ^[0-9]+$ ]]; then
-                exit 1;
-            elif [[ $OCTET -lt 0 || $OCTET -gt 255 ]]; then
-                exit 1;
+        for octet in $(echo "$1" | tr '.' ' '); do
+            if ! [[ $octet =~ ^[0-9]+$ ]]; then
+                exit 1
+            elif [[ $octet -lt 0 || $octet -gt 255 ]]; then
+                exit 1
             fi
         done
     fi
-    return 0;
+    return 0
 }
 
-while getopts “hn:v” OPTION
-do
-    case $OPTION in
+while getopts "hn:v" opt; do
+    case $opt in
         h)
             usage
             exit 1
             ;;
         n)
-	    read_n_args "${@:2}"
+            read_n_args "${@:2}"
             ;;
         ?)
             usage
             exit
             ;;
-     esac
+    esac
 done
 
-if [[ -z $nargs ]] ; then
+if [[ ${#nargs[@]} -eq 0 ]]; then
     usage
     exit 1
 fi
@@ -76,20 +78,19 @@ fi
 ######################################################################
 # Main
 ######################################################################
-if [ -f $HOST_FILE ]; then
-    mv $HOST_FILE $HOST_FILE.bk
+if [[ -f $host_file ]]; then
+    mv "$host_file" "$host_file.bk"
 fi
 
 for h in "${nargs[@]}"; do
-    ping -q -c 1 $h &>/dev/null
-    if [ $? -eq 0 ] ; then
-	dstIP=$(ssh -q $h "~/bin/bin.utils/getdstip.sh $h")
-	if ( valid_ip $dstIP == 0 ); then
-	    echo "$h $dstIP" >> $HOST_FILE
-	fi
+    if ping -q -c 1 "$h" &>/dev/null; then
+        dst_ip=$(ssh -q "$h" "\$HOME/bin/bin.utils/getdstip.sh $h")
+        if valid_ip "$dst_ip"; then
+            echo "$h $dst_ip" >> "$host_file"
+        fi
     #else
-    #	echo "WARNING: The host could not be reached: $h.";
-fi
-done;
+    #    echo "WARNING: The host could not be reached: $h."
+    fi
+done
 
-exit 0;
+exit 0

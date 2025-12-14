@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 # Description: Searches a directory and all files under it for 1 or
 # more strings in the file.
 # Author: Shane Bradley(sbradley@redhat.com)
@@ -13,46 +13,38 @@
 # $ find $(pwd) -iname messages -exec grep -ie "gcc" -ie "syslog"  {} \;
 
 path=$1
-if [ -z "$path" ]
-then
-    echo "Please give a path to a file.";
-    exit 1;
+if [[ -z "$path" ]]; then
+    echo "Please give a path to a file."
+    exit 1
 fi
 
-if [ ! -d "$path" ]
-then
-    echo "That path does not exist: $path";
-    exit 1;
+if [[ ! -d "$path" ]]; then
+    echo "That path does not exist: $path"
+    exit 1
 fi
 
-if [ -z "$2" ]
-then
-    echo "Please give a filename string to use to search those files.";
-    exit 1;
+if [[ -z "$2" ]]; then
+    echo "Please give a filename string to use to search those files."
+    exit 1
 fi
 
-if [ -z "$3" ]
-then
-    echo "Please give a string to search for.";
-    exit 1;
+if [[ -z "$3" ]]; then
+    echo "Please give a string to search for."
+    exit 1
 fi
 
-skippedFirstArgument=0;
-skippedSecondArgument=0;
-grepRegexString="";
-for var in "$@"
-do
-    if (( skippedFirstArgument == 0 ))
-    then
-        skippedFirstArgument=1;
-    elif (( skippedSecondArgument == 0 ))
-    then
-        skippedSecondArgument=1;
+skipped_first_argument=0
+skipped_second_argument=0
+grep_args=()
+for var in "$@"; do
+    if (( skipped_first_argument == 0 )); then
+        skipped_first_argument=1
+    elif (( skipped_second_argument == 0 )); then
+        skipped_second_argument=1
     else
-        grepRegexString="-ie \"$var\" $grepRegexString"
+        grep_args+=(-ie "$var")
     fi
 done
-command="find "$path" -iname $2 -exec grep $grepRegexString {} \; | sort"
-echo $command
-sh -c "$command"
-exit;
+
+find "$path" -iname "$2" -exec grep "${grep_args[@]}" {} \; | sort
+exit

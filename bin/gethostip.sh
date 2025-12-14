@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 ######################################################################
 # gethostip.sh
 #
@@ -15,9 +15,8 @@
 # $ gethostip.sh -s somehost -m somevm
 ######################################################################
 
-usage()
-{
-cat <<EOF
+usage() {
+    cat <<EOF
 usage: $0 -s <host of vms> -m <vm host>
 
 This script will clone the git repo or update the git repo, then it will reinstall configuration.
@@ -33,29 +32,28 @@ $ $0 -s somehost -m somevm
 EOF
 }
 
-SRC_HOST=
-DST_HOST=
-while getopts “hs:m:v” OPTION
-do
-     case $OPTION in
-         h)
-             usage
-             exit 1
-             ;;
-         s)
-             SRC_HOST=$OPTARG
-             ;;
-         m)
-             DST_HOST=$OPTARG
-             ;;
-         ?)
-             usage
-             exit
-             ;;
-     esac
+src_host=
+dst_host=
+while getopts "hs:m:v" opt; do
+    case $opt in
+        h)
+            usage
+            exit 1
+            ;;
+        s)
+            src_host=$OPTARG
+            ;;
+        m)
+            dst_host=$OPTARG
+            ;;
+        ?)
+            usage
+            exit
+            ;;
+    esac
 done
 
-if [[ -z $SRC_HOST ]] || [[ -z $DST_HOST ]] ; then
+if [[ -z $src_host ]] || [[ -z $dst_host ]]; then
     usage
     exit 1
 fi
@@ -63,6 +61,7 @@ fi
 ######################################################################
 # Main
 ######################################################################
-dstIP=$(ssh $SRC_HOST "~/bin/bin.utils/getdstip.sh $DST_HOST 2> /dev/null")
-echo $dstIP
-exit 0;
+# shellcheck disable=SC2029
+dst_ip=$(ssh "$src_host" "\$HOME/bin/bin.utils/getdstip.sh $dst_host 2> /dev/null")
+echo "$dst_ip"
+exit 0
