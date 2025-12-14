@@ -1,0 +1,103 @@
+#===============================================================================
+# Operating System Artifacts
+#===============================================================================
+# macOS
+.DS_Store
+.DS*
+._*
+.Spotlight-V100
+.Trashes
+# Windows
+Desktop.ini
+Thumbs.db
+# Linux
+.*~
+
+#===============================================================================
+# Editor Artifacts (Generic - applies to any project)
+#===============================================================================
+# Emacs editor temporary files (created when editing ANY project)
+*~
+\#*\#
+.#*
+.~lock.*
+# VS Code / Cursor
+.vscode/
+.cursor/
+# Claude Code
+CLAUDE.md
+CLAUDE.local.md
+.claude/
+
+#===============================================================================
+# Version Control Artifacts
+#===============================================================================
+*.patch
+*.diff
+*.orig
+*.rej
+*.bak
+
+#===============================================================================
+# Security - Credentials & Secrets (CRITICAL - always include)
+#===============================================================================
+# Credential files
+secrets/
+.authinfo
+.netrc
+.authinfo.gpg
+.password-store/
+# SSL/TLS certificates and private keys
+*.pem
+*.key
+*.crt
+*.p12
+*.pfx
+# SSH private keys
+id_rsa
+id_dsa
+id_ecdsa
+id_ed25519
+*.ppk
+# Environment files (may contain API keys)
+.env
+.env.local
+.env.*.local
+*.secret
+# Backup directories (may contain secrets from edited files)
+backups/
+auto-saves/
+auto-save-list/
+
+#===============================================================================
+# Language-Specific Artifacts
+#===============================================================================
+# Python
+__pycache__/
+*.py[cod]
+*.so
+venv/
+.venv/
+.mypy_cache/
+.ruff_cache/
+.pytype/
+monkeytype.sqlite3
+.coverage/
+# Python packaging
+bin/
+build/
+develop-eggs/
+dist/
+eggs/
+lib/
+lib64/
+parts/
+sdist/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+#===============================================================================
+# PROJECT-SPECIFIC: Emacs Configuration
+#===============================================================================
