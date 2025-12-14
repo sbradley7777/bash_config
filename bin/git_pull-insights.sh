@@ -5,7 +5,7 @@ PATH=/bin:/sbin:/usr/bin:/usr/sbin:/usr/local/bin:/usr/local/sbin:~/bin;
 export PATH;
 export TERM=${TERM:-dumb};
 
-# Set the following variable that is conna seperated.
+# Set the following variable that is conna separated.
 # eg:path="/root/test/path1,/root/test/path2"
 path="$HOME/gitlab/insights-plugins/";
 #----------------------------------------

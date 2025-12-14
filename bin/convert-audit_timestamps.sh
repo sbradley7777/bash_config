@@ -5,7 +5,7 @@ if [ -z $1 ]; then
    echo "Usage: $0 <filename>"
    exit 1
 fi
-path_to_source="$(readlink -f $1)" 
+path_to_source="$(readlink -f $1)"
 path_to_output_file=$path_to_source.mod
 if [ -f $path_to_output_file ]; then
     rm -rf $path_to_output_file;

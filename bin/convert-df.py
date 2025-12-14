@@ -67,7 +67,7 @@ def get_data_from_file_as_list(path_to_filename) :
             fin.close()
             return data
         except (IOError, os.error):
-            message = "An error occured reading the file: %s." %(path_to_filename)
+            message = "An error occurred reading the file: %s." %(path_to_filename)
             logging.getLogger(MAIN_LOGGER_NAME).error(message)
     return None
 
@@ -153,14 +153,14 @@ def tableize(rows, header, colorize=True):
                 converted_rows_to_str.append(current_row)
         # Figure out each column widths which is max column size for all rows.
         widths = [ len(max(columns, key=len)) for columns in zip(*converted_rows_to_str) ]
-        # Add seperator
+        # Add separator
         formatted_table += '-+-'.join( '-' * width for width in widths) + "\n"
         # Add the header
         header, data = converted_rows_to_str[0], converted_rows_to_str[1:]
         formatted_table += ' | '.join(format(title, "%ds" % width)
                                       for width, title in zip(widths, header) ) + "\n"
 
-        # Add seperator from first row and header.
+        # Add separator from first row and header.
         formatted_table += '-+-'.join( '-' * width for width in widths) + "\n"
         count = 0
         for row in data:
@@ -392,8 +392,8 @@ if __name__ == "__main__":
         #  Need to sort into lists first, then  take the list and format
         for line in lines:
             line = line.strip()
-            # Need the case where mount point on seperate line and one when
-            # device is on seperate line.
+            # Need the case where mount point on separate line and one when
+            # device is on separate line.
             if (((len(line.split())) == 1) and (not previous_line)):
                 previous_line = line
             elif (previous_line):

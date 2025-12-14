@@ -9,7 +9,7 @@
 # Author: Shane Bradley(sbradley@redhat.com)                         #
 # Creation Date: 12-30-2006                                          #
 # Version: 1.0                                                       #
-# Last Modified: Feburary 2, 2010                                    #
+# Last Modified: February 2, 2010                                    #
 #                                                                    #
 # usage:                                                             #
 # $ archive-files.sh                                                 #

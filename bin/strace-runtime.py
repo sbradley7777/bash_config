@@ -70,7 +70,7 @@ def get_data_from_file_as_list(path_to_filename) :
             fin.close()
             return data
         except (IOError, os.error):
-            message = "An error occured reading the file: %s." %(path_to_filename)
+            message = "An error occurred reading the file: %s." %(path_to_filename)
             logging.getLogger(MAIN_LOGGER_NAME).error(message)
     return None
 

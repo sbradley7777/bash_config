@@ -49,4 +49,3 @@ git config --global alias.remotes 'remote -v';
 #d = !"git diff-index --quiet HEAD -- || clear; git --no-pager diff --patch-with-stat"
 # `git di $number` shows the diff between the state `$number` revisions ago and the current state
 #di = !"d() { git diff --patch-with-stat HEAD~$1; }; git diff-index --quiet HEAD -- || clear; d"
-
