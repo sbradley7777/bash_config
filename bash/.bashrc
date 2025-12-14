@@ -6,14 +6,20 @@
 shopt -s expand_aliases
 
 ################################################################################
-# Source in all aliases unless the end in .org
+# Source universal aliases
 ################################################################################
-for i in "$HOME"/.aliases.*; do
-    if [[ ! "${i##*.}" == org ]]; then
-        # shellcheck disable=SC1090
-        source "$i"
-    fi
-done
+if [[ -f "$HOME/.aliases" ]]; then
+    source "$HOME/.aliases"
+fi
+
+################################################################################
+# Source platform-specific aliases
+################################################################################
+if [[ "$OS_TYPE" == "Linux" ]] && [[ -f "$HOME/.aliases.linux" ]]; then
+    source "$HOME/.aliases.linux"
+elif [[ "$OS_TYPE" == "Darwin" ]] && [[ -f "$HOME/.aliases.macos" ]]; then
+    source "$HOME/.aliases.macos"
+fi
 
 ################################################################################
 # Source in various other aliases

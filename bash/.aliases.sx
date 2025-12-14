@@ -1,7 +1,0 @@
-#!/bin/bash
-
-##############################################################################
-# SX commands
-##############################################################################
-alias sxconsole='~/github/sx/sxconsole'
-alias sxcrun='~/github/sx/sxconsole -R ~/Downloads -N -e cluster,storage,networking '

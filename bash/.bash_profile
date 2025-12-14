@@ -61,7 +61,7 @@ shopt -s cdspell
 if [[ "$OS_TYPE" == 'Darwin' ]]; then
     # Case-insensitive globbing (used in pathname expansion).
     shopt -s nocaseglob
-    source "$HOME/.functions-osx.sh"
+    source "$HOME/.functions-macos.sh"
 fi
 
 ################################################################################

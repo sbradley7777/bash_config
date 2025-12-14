@@ -62,3 +62,34 @@ if [[ $(id -u) -eq 0 ]]; then
     alias cp='cp -i'
     alias mv='mv -i'
 fi
+
+################################################################################
+# Development tools
+################################################################################
+alias kcscope="cscope -Rk -p4";
+alias pycscope="find -name *.py > cscope.files; cscope -b; cscope";
+alias diff="/usr/bin/diff -pruN";
+
+################################################################################
+# Git commands
+################################################################################
+alias gitbranchall="git branch -vv -a";
+alias gitconfigls="git config --list";
+alias gitaddall="git add .";
+alias gitcommit="git commit -s -m";
+alias gitpushorigin="git push origin";
+alias gitrebasemaster="git rebase master";
+alias gitreset="git reset --hard origin/master";
+alias gitdiffhead="git diff HEAD";
+# git show 6a985e3fda9458c84393c18f9cf700a510ff26b0 # For commit in sos repo.
+alias gitshowcommit="git show ";
+# Found these here: https://stackoverflow.com/questions/2421011/output-of-git-branch-in-tree-like-fashion
+alias gitbranchtree_1="git log --graph --simplify-by-decoration --pretty=format:'%d' --all";
+alias gitbranchtree_2="git log --graph --all --format='%C(cyan dim) %p %Cred %h %C(white dim) %s %Cgreen(%cr)%C(cyan dim) <%an>%C(bold yellow)%d%Creset'"
+alias gitcommitstree="git log --graph --oneline --decorate --branches --tags";
+
+################################################################################
+# Personal/Project commands
+################################################################################
+alias sxconsole='~/github/sx/sxconsole'
+alias sxcrun='~/github/sx/sxconsole -R ~/Downloads -N -e cluster,storage,networking '
