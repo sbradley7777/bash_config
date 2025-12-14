@@ -70,8 +70,6 @@ error_exit() {
 #   $1 - Number of bytes (must be non-negative integer)
 # Output:
 #   Prints formatted size to stdout (e.g., "5.00GB", "50.00KB")
-# Dependencies:
-#   bc, cut
 bytes_to_human_readable() {
     local slist="bytes,KB,MB,GB,TB,PB,EB,ZB,YB"
     local power=1
