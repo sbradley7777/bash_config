@@ -31,21 +31,16 @@
 #   124    Timeout - connection attempt timed out
 #
 
+################################################################################
 # Constants
+################################################################################
 readonly DEFAULT_HOST="127.0.0.1"
 readonly DEFAULT_PORT="8084"
 readonly PROTOCOLS=("ssl2" "ssl3" "tls1_1" "tls1_2")
 
-# Error handling function
-error_exit() {
-    local message="$1"
-    local exit_code="${2:-1}"
-
-    echo "ERROR: $message" >&2
-    exit "$exit_code"
-}
-
-# Usage function
+################################################################################
+# Functions
+################################################################################
 usage() {
     cat << EOF
 Usage: $(basename "$0") [-h] [host:port]
@@ -79,7 +74,16 @@ Exit Codes:
 EOF
 }
 
-# Parse command-line options using getopts
+error_exit() {
+    local message="$1"
+    local exit_code="${2:-1}"
+    echo "ERROR: $message" >&2
+    exit "$exit_code"
+}
+
+################################################################################
+# Parse Command-Line Options
+################################################################################
 while getopts ":h" opt; do
     case "$opt" in
         h)
@@ -94,13 +98,16 @@ while getopts ":h" opt; do
     esac
 done
 
-# Shift past the options to get positional arguments
 shift $((OPTIND - 1))
 
-# Check for openssl dependency
+################################################################################
+# Check Dependencies
+################################################################################
 command -v openssl &> /dev/null || error_exit "openssl is not installed or not in PATH"
 
-# Parse host:port argument
+################################################################################
+# Input Validation
+################################################################################
 target=${1:-${DEFAULT_HOST}:${DEFAULT_PORT}}
 
 # Extract host and port
@@ -119,9 +126,10 @@ fi
 [[ "$port" =~ ^[0-9]+$ ]] || error_exit "Port must be a number, got: $port"
 [[ "$port" -ge 1 && "$port" -le 65535 ]] || error_exit "Port must be between 1 and 65535, got: $port"
 
+################################################################################
+# Main Execution
+################################################################################
 timeout_bin=$(command -v timeout 2>/dev/null)
-
-# Track if any protocol succeeded and if any timed out
 any_success=false
 any_timeout=false
 

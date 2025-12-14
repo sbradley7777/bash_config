@@ -32,6 +32,9 @@
 #   1    Missing required argument
 #
 
+################################################################################
+# Functions
+################################################################################
 usage() {
     cat << EOF
 Usage: $(basename "$0") [-h] <filename>
@@ -54,7 +57,16 @@ Notes:
 EOF
 }
 
-# Parse command-line options
+error_exit() {
+    local message="$1"
+    local exit_code="${2:-1}"
+    echo "ERROR: $message" >&2
+    exit "$exit_code"
+}
+
+################################################################################
+# Parse Command-Line Options
+################################################################################
 while getopts ":h" opt; do
     case "$opt" in
         h)
@@ -70,12 +82,14 @@ while getopts ":h" opt; do
 done
 shift $((OPTIND - 1))
 
-# Validate required argument
-if [[ -z "$1" ]]; then
-    echo "ERROR: Missing required argument: filename" >&2
-    exit 1
-fi
+################################################################################
+# Input Validation
+################################################################################
+[[ -n "$1" ]] || error_exit "Missing required argument: filename"
 
+################################################################################
+# Main Execution
+################################################################################
 path_to_source="$(readlink -f "$1")"
 path_to_output_file=$path_to_source.mod
 
