@@ -1,15 +1,15 @@
 #!/bin/bash
 
-##############################################################################
+################################################################################
 # Devel command aliases
-##############################################################################
+################################################################################
 alias kcscope="cscope -Rk -p4";
 alias pycscope="find -name *.py > cscope.files; cscope -b; cscope";
 alias diff="/usr/bin/diff -pruN";
 
-##############################################################################
+################################################################################
 # Git commands
-##############################################################################
+################################################################################
 alias gitbranchall="git branch -vv -a";
 alias gitconfigls="git config --list";
 alias gitaddall="git add .";
@@ -24,9 +24,3 @@ alias gitshowcommit="git show ";
 alias gitbranchtree_1="git log --graph --simplify-by-decoration --pretty=format:'%d' --all";
 alias gitbranchtree_2="git log --graph --all --format='%C(cyan dim) %p %Cred %h %C(white dim) %s %Cgreen(%cr)%C(cyan dim) <%an>%C(bold yellow)%d%Creset'"
 alias gitcommitstree="git log --graph --oneline --decorate --branches --tags";
-
-# Example for URL:
-#   URL: https://github.com/sosreport/sos/commit/79984402303b01c81eb5a6825350d030e4022edd
-#   $ formp 79984402303b01c81eb5a6825350d030e4022edd > ~/src/dist-git/redhat/sos/sos-bz1172880-puppet-adding-new-plugin-for-puppet.patch
-formpatches () { git format-patch --stdout $@; }
-formp () { git format-patch --stdout $1~1..$1; }

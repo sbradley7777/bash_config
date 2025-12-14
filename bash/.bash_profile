@@ -2,6 +2,13 @@
 # .bash_profile
 
 ################################################################################
+# Constants
+################################################################################
+OS_TYPE=$(uname)
+readonly OS_TYPE
+readonly DIRCOLORS_CONFIG=/etc/DIR_COLORS
+
+################################################################################
 # Environment Variables
 ################################################################################
 export VISUAL="emacs -nw"
@@ -44,12 +51,6 @@ export LESS_TERMCAP_md="$ORANGE"
 export MANPAGER="less -X"
 
 ################################################################################
-# Variables used in loading of bash configuration
-################################################################################
-# The variable used for OS detection.
-unamestr=$(uname)
-
-################################################################################
 # Bash shell preferences and function import
 ################################################################################
 source "$HOME/.functions.sh"
@@ -57,7 +58,7 @@ source "$HOME/.functions.sh"
 # Autocorrect typos in path names when using `cd`.
 shopt -s cdspell
 
-if [[ "$unamestr" == 'Darwin' ]]; then
+if [[ "$OS_TYPE" == 'Darwin' ]]; then
     # Case-insensitive globbing (used in pathname expansion).
     shopt -s nocaseglob
     source "$HOME/.functions-osx.sh"
@@ -83,9 +84,8 @@ fi
 export CLICOLOR=1
 # Linux uses LS_COLORS -  http://www.arwin.net/tech/bash.php but we can use
 # dircolors to make it easier to manage.
-dircolors_config=/etc/DIR_COLORS
-if [[ -f "$dircolors_config" ]]; then
-    test -r "$dircolors_config" && eval "$(dircolors "$dircolors_config")"
+if [[ -f "$DIRCOLORS_CONFIG" ]]; then
+    test -r "$DIRCOLORS_CONFIG" && eval "$(dircolors "$DIRCOLORS_CONFIG")"
 else
     export LS_COLORS='no=00:fi=00:di=01;36:ln=01;34:pi=40;33:so=01;35:do=01;35:bd=40;33;01:cd=40;33;01:or=40;31;01:ex=01;32:*.tar=01;31:*.tgz=01;31:*.arj=01;31:*.taz=01;31:*.lzh=01;31:*.zip=01;31:*.z=01;31:*.Z=01;31:*.gz=01;31:*.bz2=01;31:*.deb=01;31:*.rpm=01;31:*.jar=01;31:*.jpg=01;35:*.jpeg=01;35:*.gif=01;35:*.bmp=01;35:*.pbm=01;35:*.pgm=01;35:*.ppm=01;35:*.tga=01;35:*.xbm=01;35:*.xpm=01;35:*.tif=01;35:*.tiff=01;35:*.png=01;35:*.mov=01;35:*.mpg=01;35:*.mpeg=01;35:*.avi=01;35:*.fli=01;35:*.gl=01;35:*.dl=01;35:*.xcf=01;35:*.xwd=01;35:*.ogg=01;35:*.mp3=01;35:*.wav=01;35:'
 fi
@@ -109,14 +109,14 @@ if [[ -d "$HOME/bin" ]]; then
     done
 fi
 # Ensure user-installed binaries take precedence, for stuff like brew on osx.
-if [[ "$unamestr" == 'Darwin' ]]; then
+if [[ "$OS_TYPE" == 'Darwin' ]]; then
     export PATH="/usr/local/bin:$PATH"
 fi
 
 ################################################################################
 # Use bash-completion, if available
 ################################################################################
-if [[ "$unamestr" == 'Linux' ]]; then
+if [[ "$OS_TYPE" == 'Linux' ]]; then
     if [[ -f /etc/bash_completion ]]; then
         source /etc/bash_completion
     fi
@@ -124,13 +124,8 @@ if [[ "$unamestr" == 'Linux' ]]; then
         # yum -y install source-highlight
         export LESSOPEN="| /usr/bin/src-hilite-lesspipe.sh %s"
         export LESS=' -R '
-        # -J adds extra line to start which is problem with copy/paste.
-        alias less_nl='less -m -N -g -i --underline-special --SILENT'
-        alias less='less -m -g -i --SILENT'
-        # Use "highlight" in place of "cat"
-        alias cathl='/usr/bin/src-hilite-lesspipe.sh'
     fi
-elif [[ "$unamestr" == 'Darwin' ]]; then
+elif [[ "$OS_TYPE" == 'Darwin' ]]; then
     # !!! bash-completion takes too long to build index, so disabling for now. !!!
     #
     # The package bash-completion will need to be installed with brew and the
@@ -150,12 +145,6 @@ elif [[ "$unamestr" == 'Darwin' ]]; then
         LESSOPEN="| $(brew --prefix)/bin/src-hilite-lesspipe.sh %s"
         export LESSOPEN
         export LESS=' -R '
-        alias less_nl='less -m -N -g -i -J --underline-special --SILENT'
-        alias less='less -m -g -i -J --SILENT'
-        # Use "highlight" in place of "cat"
-        brew_prefix=$(brew --prefix)
-        # shellcheck disable=SC2139
-        alias cathl="${brew_prefix}/bin/src-hilite-lesspipe.sh"
     fi
 fi
 

@@ -52,3 +52,13 @@ alias rdrestart="sudo /System/Library/CoreServices/RemoteManagement/ARDAgent.app
 ##############################################################################
 alias yubikey_off='osascript -e "tell application \"yubiswitch\" to KeyOff"';
 alias yubikey_on='osascript -e "tell application \"yubiswitch\" to KeyOn"';
+
+##############################################################################
+# Pager Aliases (source-highlight integration)
+##############################################################################
+if [[ -f "$(brew --prefix)/bin/src-hilite-lesspipe.sh" ]]; then
+    alias less_nl='less -m -N -g -i -J --underline-special --SILENT'
+    alias less='less -m -g -i -J --SILENT'
+    # shellcheck disable=SC2139
+    alias cathl="$(brew --prefix)/bin/src-hilite-lesspipe.sh"
+fi

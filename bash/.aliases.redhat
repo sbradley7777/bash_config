@@ -72,3 +72,12 @@ alias pscpu10='ps auxf | sort -nr -k 3 | head -10';
 ##############################################################################
 alias kernel_patch_history_rhel6='git log --reverse --abbrev-commit --pretty=oneline origin/master |grep -i -e "tagging" -e "gfs2" -e "dlm"|less';
 alias kernel_patch_history_rhel7='git log --reverse --abbrev-commit --pretty=oneline origin/master |grep -i -e "kernel-3.10.0-" -e "gfs2" -e "dlm"|less';
+
+##############################################################################
+# Pager Aliases (source-highlight integration)
+##############################################################################
+if [[ -f /usr/bin/src-hilite-lesspipe.sh ]]; then
+    alias less_nl='less -m -N -g -i --underline-special --SILENT'
+    alias less='less -m -g -i --SILENT'
+    alias cathl='/usr/bin/src-hilite-lesspipe.sh'
+fi

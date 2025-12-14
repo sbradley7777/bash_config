@@ -1,26 +1,26 @@
 #!/bin/bash
 
-# Set the colours you can use (exported for use in other scripts)
-# shellcheck disable=SC2034
+################################################################################
+# Color Constants
+################################################################################
+# ANSI color codes for use with cecho() function
+# Usage: cecho "message" "$red"
+# shellcheck disable=SC2034  # Variables used by external callers of cecho()
 black='\033[0;30m'
-# shellcheck disable=SC2034
 white='\033[0;37m'
-# shellcheck disable=SC2034
 red='\033[0;31m'
-# shellcheck disable=SC2034
 green='\033[0;32m'
-# shellcheck disable=SC2034
 yellow='\033[0;33m'
-# shellcheck disable=SC2034
 blue='\033[0;34m'
-# shellcheck disable=SC2034
 magenta='\033[0;35m'
-# shellcheck disable=SC2034
 cyan='\033[0;36m'
 
-# Color-echo.
-# arg $1 = message
-# arg $2 = Color
+# Print colored text to stdout
+# Arguments:
+#   $1 - Message to print
+#   $2 - Color code (use color constants above)
+# Example:
+#   cecho "Error occurred" "$red"
 cecho() {
     echo "${2}${1}"
     Reset # Reset to normal.
@@ -29,6 +29,13 @@ cecho() {
 
 #  Reset text attributes to normal + without clearing screen.
 alias Reset="tput sgr0"
+
+# Remove timestamp from history output
+# Output:
+#   Prints history without timestamp columns to stdout
+history_no_timestamp() {
+    history | awk '{$1=$2=$3=$4=$5=""}1' | sed -e 's/^[[:space:]]*//'
+}
 
 emacsro() {
     if [[ -n "$1" ]]; then
@@ -89,6 +96,32 @@ if hash git &>/dev/null; then
         git diff --no-index --color-words "$@"
     }
 fi
+
+################################################################################
+# Git Functions
+################################################################################
+
+# Format multiple git patches to stdout
+# Arguments:
+#   $@ - Git revision range (e.g., HEAD~3..HEAD)
+# Output:
+#   Formatted patches to stdout
+# Example:
+#   formpatches HEAD~3..HEAD > my-patches.patch
+formpatches() {
+    git format-patch --stdout "$@"
+}
+
+# Format a single git commit as a patch
+# Arguments:
+#   $1 - Commit hash
+# Output:
+#   Formatted patch to stdout
+# Example:
+#   formp 79984402303b01c81eb5a6825350d030e4022edd > my-patch.patch
+formp() {
+    git format-patch --stdout "$1~1..$1"
+}
 
 # Add bash completion for ssh: it tries to complete the host to which you
 # want to connect from the list of the ones contained in ~/.ssh/known_hosts
