@@ -45,10 +45,17 @@ command_exists() {
 }
 
 # Create a new directory and enter it
+# Arguments:
+#   $@ - Directory path to create
 mkd() {
     mkdir -p "$@" && cd "$@" || return
 }
 
+# Remove leading and trailing whitespace from text
+# Arguments:
+#   $* - Text to trim
+# Output:
+#   Prints trimmed text to stdout
 trim_whitespaces() {
     local var="$*"
     # remove leading whitespace characters
@@ -59,6 +66,10 @@ trim_whitespaces() {
 }
 
 # Determine size of a file or total size of a directory
+# Arguments:
+#   $@ - Files or directories to measure (optional, defaults to current directory)
+# Output:
+#   Prints human-readable sizes to stdout
 filesize() {
     if du -b /dev/null > /dev/null 2>&1; then
         local arg=-sbh
