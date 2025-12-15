@@ -31,6 +31,40 @@ See **[bash/README.md](https://github.com/sbradley7777/bash_config/blob/master/b
 
 ### Installation
 
+#### Option 1: Automated Installation (Recommended)
+
+Use the [`install.sh`](scripts/install.sh) script for safe, automated installation with automatic backups:
+
+1. Clone the repository:
+   ```bash
+   git clone https://github.com/sbradley7777/bash_config.git ~/github/bash_config
+   ```
+
+2. Run the installer:
+   ```bash
+   cd ~/github/bash_config/scripts
+   ./install.sh
+   ```
+
+The installer will:
+- Automatically detect the repository location
+- Validate the environment
+- Create timestamped backups of existing configuration files
+- Remove old configuration files
+- Install new configuration files from `bash/`
+- Create symlink: `~/bin/bin.github` → repository's `bin/` directory
+
+**Preview changes without making modifications:**
+```bash
+./install.sh -n
+```
+
+**See [`scripts/README.md`](scripts/README.md) for complete installation script documentation.**
+
+#### Option 2: Manual Installation
+
+If you prefer manual installation:
+
 1. Clone the repository:
    ```bash
    git clone https://github.com/sbradley7777/bash_config.git ~/github/bash_config
