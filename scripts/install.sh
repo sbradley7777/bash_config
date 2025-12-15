@@ -33,13 +33,11 @@
 ################################################################################
 readonly EXPECTED_PROJECT_NAME="bash_config"
 
-# Configuration file patterns to backup and remove
+# Wildcard patterns to catch additional configuration files to backup and remove
+# Specific files are automatically derived from FILES_TO_INSTALL keys
 readonly CONFIG_FILE_PATTERNS=(
-    ".bash_profile"
-    ".bashrc"
-    ".aliases"
-    ".aliases.*"
-    ".functions*"
+    "$HOME/.aliases"*      # Matches .aliases, .aliases.linux, .aliases.macos, etc.
+    "$HOME/.functions"*    # Matches .functions.sh, .functions-macos.sh, etc.
 )
 
 ################################################################################
@@ -127,27 +125,34 @@ get_basename() {
 # Configuration File Management
 ################################################################################
 # Build array of full paths to configuration files
-# Expands all patterns in CONFIG_FILE_PATTERNS into actual file paths
+# Includes files from FILES_TO_INSTALL keys and CONFIG_FILE_PATTERNS wildcards
 # Arguments:
-#   None (uses CONFIG_FILE_PATTERNS global)
+#   None (uses FILES_TO_INSTALL and CONFIG_FILE_PATTERNS globals)
 # Output:
 #   Sets global array: config_files_to_process
 # Returns:
 #   0 if files found, 1 if no files found
 build_config_file_list() {
+    local -A seen_files
     config_files_to_process=()
 
-    for pattern in "${CONFIG_FILE_PATTERNS[@]}"; do
-        if [[ "$pattern" != *"*"* ]] && [[ "$pattern" != *"?"* ]] && [[ "$pattern" != *"["* ]]; then
-            # Specific file (e.g., ".bash_profile", ".bashrc")
-            local file_path="$HOME/$pattern"
-            [[ -e "$file_path" ]] && config_files_to_process+=("$file_path")
-        else
-            # Glob pattern (e.g., ".aliases.*", ".functions*")
-            for file in "$HOME"/$pattern; do
-                [[ -e "$file" ]] && config_files_to_process+=("$file")
-            done
+    # Add files from FILES_TO_INSTALL (specific files we're installing)
+    for dest_file in "${!FILES_TO_INSTALL[@]}"; do
+        if [[ -e "$dest_file" ]] && [[ -z "${seen_files[$dest_file]}" ]]; then
+            config_files_to_process+=("$dest_file")
+            seen_files["$dest_file"]=1
         fi
+    done
+
+    # Add files matching wildcard patterns (catches additional files)
+    # Note: pattern is intentionally unquoted to allow glob expansion
+    for pattern in "${CONFIG_FILE_PATTERNS[@]}"; do
+        for file in $pattern; do
+            if [[ -e "$file" ]] && [[ -z "${seen_files[$file]}" ]]; then
+                config_files_to_process+=("$file")
+                seen_files["$file"]=1
+            fi
+        done
     done
 
     [[ ${#config_files_to_process[@]} -gt 0 ]] && return 0 || return 1
@@ -404,9 +409,9 @@ get_project_root() {
 }
 
 # Backup and remove configuration files
-# Builds list of files from CONFIG_FILE_PATTERNS, backs them up, then removes them
+# Builds list from FILES_TO_INSTALL keys and CONFIG_FILE_PATTERNS wildcards
 # Arguments:
-#   None (uses CONFIG_FILE_PATTERNS global)
+#   None (uses FILES_TO_INSTALL and CONFIG_FILE_PATTERNS globals)
 # Globals:
 #   BACKUP_DIR - Directory where backups are saved
 #   enable_dry_run - If true, skip backup and only show what would be removed
@@ -466,7 +471,8 @@ remove_symlinks() {
 }
 
 # Create symlinks from repository directories to home directory
-# Uses associative array SYMLINKS (key: link path, value: target path)
+# Uses associative array SYMLINKS (key: destination path, value: source path)
+# All sources are pre-validated to exist
 # Ensures parent directories exist before creating symlinks
 # Respects dry-run mode when enabled
 install_symlinks() {
@@ -520,7 +526,8 @@ get_max_display_path_length() {
 }
 
 # Install bash configuration files from repository to home directory
-# Copies files defined in FILES_TO_INSTALL array to home directory
+# Copies files defined in FILES_TO_INSTALL associative array
+# Uses associative array (key: destination path, value: source path)
 # All files are pre-validated to exist
 # Respects dry-run mode when enabled
 install_files() {
@@ -528,10 +535,8 @@ install_files() {
 
     local installed_count=0
 
-    for source_file in "${FILES_TO_INSTALL[@]}"; do
-        local filename
-        filename="$(get_basename "$source_file")"
-        local dest_file="$HOME/$filename"
+    for dest_file in "${!FILES_TO_INSTALL[@]}"; do
+        local source_file="${FILES_TO_INSTALL[$dest_file]}"
 
         copy_file "$source_file" "$dest_file"
         ((installed_count++))
@@ -602,15 +607,18 @@ readonly PATH_TO_REPO_BASH_DIR
 # Define constants now that paths are validated
 BACKUP_DIR="$HOME/.bash_backup_$(date +%Y%m%d_%H%M%S)"
 readonly BACKUP_DIR
-readonly FILES_TO_INSTALL=(
-    "$PATH_TO_REPO_BASH_DIR/.aliases"
-    "$PATH_TO_REPO_BASH_DIR/.aliases.linux"
-    "$PATH_TO_REPO_BASH_DIR/.aliases.macos"
-    "$PATH_TO_REPO_BASH_DIR/.bash_profile"
-    "$PATH_TO_REPO_BASH_DIR/.bashrc"
-    "$PATH_TO_REPO_BASH_DIR/.functions.sh"
-    "$PATH_TO_REPO_BASH_DIR/.functions-macos.sh"
-)
+
+# Files to copy (associative array)
+# Key: destination path, Value: source path
+declare -A FILES_TO_INSTALL
+FILES_TO_INSTALL["$HOME/.aliases"]="$PATH_TO_REPO_BASH_DIR/.aliases"
+FILES_TO_INSTALL["$HOME/.aliases.linux"]="$PATH_TO_REPO_BASH_DIR/.aliases.linux"
+FILES_TO_INSTALL["$HOME/.aliases.macos"]="$PATH_TO_REPO_BASH_DIR/.aliases.macos"
+FILES_TO_INSTALL["$HOME/.bash_profile"]="$PATH_TO_REPO_BASH_DIR/.bash_profile"
+FILES_TO_INSTALL["$HOME/.bashrc"]="$PATH_TO_REPO_BASH_DIR/.bashrc"
+FILES_TO_INSTALL["$HOME/.functions.sh"]="$PATH_TO_REPO_BASH_DIR/.functions.sh"
+FILES_TO_INSTALL["$HOME/.functions-macos.sh"]="$PATH_TO_REPO_BASH_DIR/.functions-macos.sh"
+readonly FILES_TO_INSTALL
 
 # Validate that all source files exist
 for source_file in "${FILES_TO_INSTALL[@]}"; do
@@ -625,16 +633,15 @@ PATH_TO_REPO_BIN_DIR="$PROJECT_ROOT/bin"
 [[ -d "$PATH_TO_REPO_BIN_DIR" ]] || error_exit "bin directory not found for \"$PROJECT_NAME\" git project: $(display_path "$PATH_TO_REPO_BIN_DIR")"
 readonly PATH_TO_REPO_BIN_DIR
 
-# Symlinks to remove and recreate (associative array)
-# Key: symlink path, Value: target path
+# Symlinks to create (associative array)
+# Key: destination path (symlink location), Value: source path (target)
 declare -A SYMLINKS
 SYMLINKS["$HOME/bin/bin.github"]="$PATH_TO_REPO_BIN_DIR"
 readonly SYMLINKS
 
-# Validate that all symlink targets exist
-for link_path in "${!SYMLINKS[@]}"; do
-    target="${SYMLINKS[$link_path]}"
-    [[ -d "$target" ]] || error_exit "Symlink target directory not found: $(display_path "$target")"
+# Validate that all symlink sources exist
+for target in "${SYMLINKS[@]}"; do
+    [[ -d "$target" ]] || error_exit "Symlink source directory not found: $(display_path "$target")"
 done
 
 ################################################################################

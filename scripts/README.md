@@ -104,13 +104,17 @@ If any validation fails, the script exits immediately with a clear error message
 The installer **always creates backups** before making changes (except in dry-run mode):
 
 1. Creates timestamped backup directory: `~/.bash_backup_YYYYMMDD_HHMMSS`
-2. Backs up existing files if they exist:
-   - `~/.bash_profile`
-   - `~/.bashrc`
-   - `~/.aliases.*` (all alias files)
-   - `~/.functions*` (all function files)
-3. Displays backup location
-4. If no files exist to backup, removes empty backup directory
+2. Builds deduplicated list of files to backup from:
+   - All files in `FILES_TO_INSTALL` (specific files being installed)
+   - All files matching wildcard patterns in `CONFIG_FILE_PATTERNS` (`.aliases*`, `.functions*`)
+3. Backs up all existing files found
+4. Displays backup location
+5. If no files exist to backup, removes empty backup directory
+
+This approach ensures that:
+- All files being installed are backed up
+- Additional user-created config files (e.g., `.aliases.custom`) are also backed up
+- No files are backed up twice (deduplicated)
 
 #### 4. Installation Phase
 
@@ -204,31 +208,49 @@ shellcheck install.sh
 
 ### Technical Details
 
+**Data Structures**:
+
+The script uses **associative arrays** for both file copying and symlink creation, with a unified pattern:
+- **Key**: Destination path (where the file/symlink goes)
+- **Value**: Source path (where it comes from)
+
+This unified approach provides:
+- Consistent data structure across operations
+- Single validation point (sources validated when building arrays)
+- Explicit destination → source mappings
+- Easy to extend with new files or symlinks
+
 **Constants**:
 - `EXPECTED_PROJECT_NAME` - Expected git project name (`"bash_config"`)
-- `CONFIG_FILE_PATTERNS` - Array of file patterns to backup/remove (readonly)
+- `CONFIG_FILE_PATTERNS` - Wildcard patterns with full paths (`$HOME/.aliases*`, `$HOME/.functions*`) (readonly)
 - `PROJECT_ROOT` - Validated project root directory (readonly)
 - `PROJECT_NAME` - Actual project name from git (readonly)
 - `PATH_TO_REPO_BASH_DIR` - Path to repository's `bash/` directory (readonly)
 - `PATH_TO_REPO_BIN_DIR` - Path to repository's `bin/` directory (readonly)
 - `BACKUP_DIR` - Timestamped backup directory (readonly)
-- `FILES_TO_INSTALL` - Array of files to install with full paths (readonly)
+- `FILES_TO_INSTALL` - Associative array of files to copy (key: destination path, value: source path) (readonly)
+- `SYMLINKS` - Associative array of symlinks to create (key: destination path, value: source path) (readonly)
 
 **Functions**:
 - `usage()` - Display help message
 - `error_exit()` - Print error to stderr and exit
 - `display_path()` - Convert `$HOME` to `~` in paths
 - `get_basename()` - Extract filename from path
-- `build_config_file_list()` - Build array of files from patterns (internal helper)
+- `build_config_file_list()` - Build deduplicated array from FILES_TO_INSTALL keys and CONFIG_FILE_PATTERNS wildcards (internal helper)
 - `backup_file()` - Backup a single file (internal helper)
 - `remove_file()` - Remove a single file (internal helper)
+- `copy_file()` - Copy a single file with formatted display (internal helper)
+- `create_directory()` - Create a directory (internal helper)
+- `create_symlink()` - Create a symbolic link (internal helper)
 - `backup_and_remove_files()` - Build file list, backup and remove all configuration files
 - `find_git_project_root()` - Search upward for `.git` directory
 - `get_git_project_name()` - Extract project name from git remote URL
 - `validate_project_root()` - Verify correct git repository
 - `get_project_root()` - Get and validate project root (combines detection + validation)
-- `install_files()` - Copy new configuration files
-- `create_bin_symlink()` - Create `~/bin/bin.github` symlink
+- `get_max_display_path_length()` - Find maximum display path length for alignment (internal helper)
+- `install_files()` - Copy configuration files from FILES_TO_INSTALL associative array
+- `remove_symlinks()` - Remove existing items at symlink destination paths
+- `install_symlinks()` - Create symlinks from SYMLINKS associative array
 
 **Exit Codes**:
 - `0` - Success
