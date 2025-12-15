@@ -1,8 +1,0 @@
-# Set the amount of time to delay startup.
-DELAY_START_SECONDS=0;
-# 0 enables httpd server on port 8088 and nonzero disables it.
-ENABLE_HTTPD=1;
-# Amount of time to wait when stopping.
-DELAY_STOP_SECONDS=0;
-# Path to the script that will be ran.
-#PATH_TO_SCRIPT="/root/bin/bin.clusterha/lsb-resource-bg.sh"
