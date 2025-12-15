@@ -169,9 +169,9 @@ backup_file() {
     echo "  Backed up: $filename"
 }
 
-# Remove a single file
+# Remove a single file or symlink
 # Arguments:
-#   $1 - Full path to file to remove
+#   $1 - Full path to file/symlink to remove
 # Globals:
 #   enable_dry_run - If true, only show what would be done
 # Output:
@@ -182,8 +182,83 @@ remove_file() {
     if [[ "$enable_dry_run" == true ]]; then
         echo "  [DRY RUN] Removed: $(display_path "$file_path")"
     else
-        rm "$file_path" || error_exit "Failed to remove $(display_path "$file_path")"
+        rm -f "$file_path" || error_exit "Failed to remove $(display_path "$file_path")"
         echo "  Removed: $(display_path "$file_path")"
+    fi
+}
+
+# Copy a single file with formatted display
+# Arguments:
+#   $1 - Source file path
+#   $2 - Destination file path
+# Globals:
+#   enable_dry_run - If true, only show what would be done
+#   FILES_TO_INSTALL - Used to calculate max path length for alignment
+# Output:
+#   Prints copy confirmation message with arrow notation
+copy_file() {
+    local source_file="$1"
+    local dest_file="$2"
+    local filename
+    filename="$(get_basename "$source_file")"
+
+    # Calculate max length for arrow alignment
+    local max_length
+    max_length="$(get_max_display_path_length "${FILES_TO_INSTALL[@]}")"
+
+    # Get display paths
+    local source_display
+    source_display="$(display_path "$source_file")"
+    local dest_display
+    dest_display="$(display_path "$dest_file")"
+
+    # Pad source path to align arrows
+    local padded_source
+    printf -v padded_source "%-${max_length}s" "$source_display"
+
+    if [[ "$enable_dry_run" == true ]]; then
+        echo "  [DRY RUN] Copy: $padded_source  ->  $dest_display"
+    else
+        cp "$source_file" "$dest_file" || error_exit "Failed to copy $filename"
+        echo "  Installed: $padded_source  ->  $dest_display"
+    fi
+}
+
+# Create a directory
+# Arguments:
+#   $1 - Directory path to create
+# Globals:
+#   enable_dry_run - If true, only show what would be done
+# Output:
+#   Prints directory creation confirmation message
+create_directory() {
+    local dir_path="$1"
+
+    if [[ "$enable_dry_run" == true ]]; then
+        echo "  [DRY RUN] Create directory: $(display_path "$dir_path")"
+    else
+        mkdir -p "$dir_path" || error_exit "Failed to create directory: $(display_path "$dir_path")"
+        echo "  Created directory: $(display_path "$dir_path")"
+    fi
+}
+
+# Create a symbolic link
+# Arguments:
+#   $1 - Target path (what the symlink points to)
+#   $2 - Symlink path (the symlink itself)
+# Globals:
+#   enable_dry_run - If true, only show what would be done
+# Output:
+#   Prints symlink creation confirmation message
+create_symlink() {
+    local target="$1"
+    local link_path="$2"
+
+    if [[ "$enable_dry_run" == true ]]; then
+        echo "  [DRY RUN] Create symlink: $(display_path "$link_path") -> $(display_path "$target")"
+    else
+        ln -s "$target" "$link_path" || error_exit "Failed to create symlink $(display_path "$link_path")"
+        echo "  Created symlink: $(display_path "$link_path") -> $(display_path "$target")"
     fi
 }
 
@@ -388,27 +463,13 @@ install_files() {
     echo "Installing configuration files from repository..."
 
     local installed_count=0
-    local max_length
-    max_length="$(get_max_display_path_length "${FILES_TO_INSTALL[@]}")"
 
     for source_file in "${FILES_TO_INSTALL[@]}"; do
         local filename
         filename="$(get_basename "$source_file")"
         local dest_file="$HOME/$filename"
-        local source_display
-        source_display="$(display_path "$source_file")"
-        local dest_display
-        dest_display="$(display_path "$dest_file")"
 
-        # Pad source path to align arrows
-        printf -v padded_source "%-${max_length}s" "$source_display"
-
-        if [[ "$enable_dry_run" == true ]]; then
-            echo "  [DRY RUN] Copy: $padded_source  ->  $dest_display"
-        else
-            cp "$source_file" "$dest_file" || error_exit "Failed to copy $filename"
-            echo "  Installed: $padded_source  ->  $dest_display"
-        fi
+        copy_file "$source_file" "$dest_file"
         ((installed_count++))
     done
 
@@ -433,31 +494,16 @@ create_bin_symlink() {
 
     # Ensure target directory exists
     if [[ ! -d "$target_dir" ]]; then
-        if [[ "$enable_dry_run" == true ]]; then
-            echo "  [DRY RUN] Create directory: $(display_path "$target_dir")"
-        else
-            mkdir -p "$target_dir" || error_exit "Failed to create bin symlink target directory: $(display_path "$target_dir")"
-            echo "  Created directory: $(display_path "$target_dir")"
-        fi
+        create_directory "$target_dir"
     fi
 
     # Remove existing symlink or file if it exists
     if [[ -e "$symlink_path" ]] || [[ -L "$symlink_path" ]]; then
-        if [[ "$enable_dry_run" == true ]]; then
-            echo "  [DRY RUN] Remove existing: $(display_path "$symlink_path")"
-        else
-            rm -f "$symlink_path" || error_exit "Failed to remove existing $(display_path "$symlink_path")"
-            echo "  Removed existing: $(display_path "$symlink_path")"
-        fi
+        remove_file "$symlink_path"
     fi
 
     # Create the symlink
-    if [[ "$enable_dry_run" == true ]]; then
-        echo "  [DRY RUN] Create symlink: $(display_path "$symlink_path") -> $(display_path "$PATH_TO_REPO_BIN_DIR")"
-    else
-        ln -s "$PATH_TO_REPO_BIN_DIR" "$symlink_path" || error_exit "Failed to create symlink $(display_path "$symlink_path")"
-        echo "  Created symlink: $(display_path "$symlink_path") -> $(display_path "$PATH_TO_REPO_BIN_DIR")"
-    fi
+    create_symlink "$PATH_TO_REPO_BIN_DIR" "$symlink_path"
 }
 
 ################################################################################
