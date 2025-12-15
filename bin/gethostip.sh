@@ -22,7 +22,7 @@
 #
 # Dependencies:
 #   - ssh
-#   - getdstip.sh (must be installed on source host at $HOME/bin/bin.utils/)
+#   - getdstip.sh (must be available in PATH on source host)
 #
 # Exit Codes:
 #   0    Success - IP address retrieved
@@ -102,7 +102,7 @@ done
 # Main Execution
 ################################################################################
 # shellcheck disable=SC2029
-dst_ip=$(ssh "$src_host" "\$HOME/bin/bin.utils/getdstip.sh $dst_host 2> /dev/null")
+dst_ip=$(ssh "$src_host" "source ~/.bash_profile &>/dev/null && getdstip.sh $dst_host 2>/dev/null")
 echo "$dst_ip"
 
 exit 0

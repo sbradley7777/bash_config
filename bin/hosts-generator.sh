@@ -20,7 +20,7 @@
 # Dependencies:
 #   - ssh
 #   - ping
-#   - getdstip.sh (must be installed on each target host at $HOME/bin/bin.utils/)
+#   - getdstip.sh (must be available in PATH on each target host)
 #
 # Notes:
 #   - Creates/overwrites ~/.hosts file
@@ -138,7 +138,7 @@ fi
 # Query each host for its IP address
 for hostname in "${hostnames[@]}"; do
     if ping -q -c 1 "$hostname" &>/dev/null; then
-        ip_address=$(ssh -q "$hostname" "getdstip.sh $hostname")
+        ip_address=$(ssh -q "$hostname" "source ~/.bash_profile &>/dev/null && getdstip.sh $hostname 2>/dev/null")
 
         if valid_ip "$ip_address"; then
             echo "$hostname $ip_address" >> "$HOST_FILE"
