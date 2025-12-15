@@ -442,6 +442,62 @@ backup_and_remove_files() {
     done
 }
 
+# Remove existing items at symlink paths
+# No backup needed - symlinks contain no data
+# Arguments:
+#   None (uses SYMLINKS global)
+# Globals:
+#   SYMLINKS - Associative array of symlink paths to targets
+#   enable_dry_run - If true, only show what would be removed
+remove_symlinks() {
+    # Filter to only items that exist
+    local -a items_to_remove=()
+    for link_path in "${!SYMLINKS[@]}"; do
+        [[ -e "$link_path" ]] || [[ -L "$link_path" ]] && items_to_remove+=("$link_path")
+    done
+
+    # Return if nothing to remove
+    [[ ${#items_to_remove[@]} -eq 0 ]] && return 0
+
+    echo "Removing existing items at symlink paths..."
+    for link_path in "${items_to_remove[@]}"; do
+        remove_file "$link_path"
+    done
+}
+
+# Create symlinks from repository directories to home directory
+# Uses associative array SYMLINKS (key: link path, value: target path)
+# Ensures parent directories exist before creating symlinks
+# Respects dry-run mode when enabled
+install_symlinks() {
+    echo "Creating symlinks..."
+
+    local symlink_count=0
+
+    for link_path in "${!SYMLINKS[@]}"; do
+        local target="${SYMLINKS[$link_path]}"
+        local parent_dir
+        parent_dir="$(dirname "$link_path")"
+
+        # Ensure parent directory exists
+        if [[ ! -d "$parent_dir" ]]; then
+            create_directory "$parent_dir"
+        fi
+
+        # Create the symlink
+        create_symlink "$target" "$link_path"
+        ((symlink_count++))
+    done
+
+    if [[ "$enable_dry_run" == false ]]; then
+        echo ""
+        echo "Symlink creation complete: $symlink_count symlinks created"
+    else
+        echo ""
+        echo "[DRY RUN] Create $symlink_count symlinks"
+    fi
+}
+
 ################################################################################
 # Installation Functions
 ################################################################################
@@ -488,30 +544,6 @@ install_files() {
         echo ""
         echo "[DRY RUN] Install $installed_count files"
     fi
-}
-
-# Create symlink from ~/bin/bin.github to repository's bin directory
-# Creates ~/bin directory if it doesn't exist
-# Removes existing symlink/file before creating new one
-# Respects dry-run mode when enabled
-create_bin_symlink() {
-    echo "Creating symlink for bin directory..."
-
-    local target_dir="$HOME/bin"
-    local symlink_path="$target_dir/bin.github"
-
-    # Ensure target directory exists
-    if [[ ! -d "$target_dir" ]]; then
-        create_directory "$target_dir"
-    fi
-
-    # Remove existing symlink or file if it exists
-    if [[ -e "$symlink_path" ]] || [[ -L "$symlink_path" ]]; then
-        remove_file "$symlink_path"
-    fi
-
-    # Create the symlink
-    create_symlink "$PATH_TO_REPO_BIN_DIR" "$symlink_path"
 }
 
 ################################################################################
@@ -564,10 +596,9 @@ PATH_TO_REPO_BASH_DIR="$PROJECT_ROOT/bash"
 [[ -d "$PATH_TO_REPO_BASH_DIR" ]] || error_exit "bash directory not found for \"$PROJECT_NAME\" git project: $(display_path "$PATH_TO_REPO_BASH_DIR")"
 readonly PATH_TO_REPO_BASH_DIR
 
-PATH_TO_REPO_BIN_DIR="$PROJECT_ROOT/bin"
-[[ -d "$PATH_TO_REPO_BIN_DIR" ]] || error_exit "bin directory not found for \"$PROJECT_NAME\" git project: $(display_path "$PATH_TO_REPO_BIN_DIR")"
-readonly PATH_TO_REPO_BIN_DIR
-
+################################################################################
+# File Configuration
+################################################################################
 # Define constants now that paths are validated
 BACKUP_DIR="$HOME/.bash_backup_$(date +%Y%m%d_%H%M%S)"
 readonly BACKUP_DIR
@@ -584,6 +615,26 @@ readonly FILES_TO_INSTALL=(
 # Validate that all source files exist
 for source_file in "${FILES_TO_INSTALL[@]}"; do
     [[ -f "$source_file" ]] || error_exit "Required configuration file not found for \"$PROJECT_NAME\" git project: $(display_path "$source_file")"
+done
+
+################################################################################
+# Symlink Configuration
+################################################################################
+# Build and validate bin directory path for symlinks
+PATH_TO_REPO_BIN_DIR="$PROJECT_ROOT/bin"
+[[ -d "$PATH_TO_REPO_BIN_DIR" ]] || error_exit "bin directory not found for \"$PROJECT_NAME\" git project: $(display_path "$PATH_TO_REPO_BIN_DIR")"
+readonly PATH_TO_REPO_BIN_DIR
+
+# Symlinks to remove and recreate (associative array)
+# Key: symlink path, Value: target path
+declare -A SYMLINKS
+SYMLINKS["$HOME/bin/bin.github"]="$PATH_TO_REPO_BIN_DIR"
+readonly SYMLINKS
+
+# Validate that all symlink targets exist
+for link_path in "${!SYMLINKS[@]}"; do
+    target="${SYMLINKS[$link_path]}"
+    [[ -d "$target" ]] || error_exit "Symlink target directory not found: $(display_path "$target")"
 done
 
 ################################################################################
@@ -608,8 +659,11 @@ echo ""
 install_files
 echo ""
 
-# Create bin symlink
-create_bin_symlink
+# Remove and recreate symlinks (no backup needed)
+remove_symlinks
+echo ""
+
+install_symlinks
 
 if [[ "$enable_dry_run" == false ]]; then
     echo ""
