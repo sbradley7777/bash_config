@@ -138,7 +138,7 @@ fi
 # Query each host for its IP address
 for hostname in "${hostnames[@]}"; do
     if ping -q -c 1 "$hostname" &>/dev/null; then
-        ip_address=$(ssh -q "$hostname" "\$HOME/bin/bin.utils/getdstip.sh $hostname")
+        ip_address=$(ssh -q "$hostname" "getdstip.sh $hostname")
 
         if valid_ip "$ip_address"; then
             echo "$hostname $ip_address" >> "$HOST_FILE"
