@@ -628,26 +628,21 @@ readonly FILES_TO_INSTALL
 
 # Validate that all source files exist
 for source_file in "${FILES_TO_INSTALL[@]}"; do
-    [[ -f "$source_file" ]] || error_exit "Required configuration file not found for \"$PROJECT_NAME\" git project: $(display_path "$source_file")"
+    [[ -e "$source_file" ]] || error_exit "Required source not found for \"$PROJECT_NAME\" git project: $(display_path "$source_file")"
 done
 
 ################################################################################
 # Symlink Configuration
 ################################################################################
-# Build and validate bin directory path for symlinks
-PATH_TO_REPO_BIN_DIR="$PROJECT_ROOT/bin"
-[[ -d "$PATH_TO_REPO_BIN_DIR" ]] || error_exit "bin directory not found for \"$PROJECT_NAME\" git project: $(display_path "$PATH_TO_REPO_BIN_DIR")"
-readonly PATH_TO_REPO_BIN_DIR
-
 # Symlinks to create (associative array)
 # Key: destination path (symlink location), Value: source path (target)
 declare -A SYMLINKS
-SYMLINKS["$HOME/bin/bin.github"]="$PATH_TO_REPO_BIN_DIR"
+SYMLINKS["$HOME/bin/bin.github"]="$PROJECT_ROOT/bin"
 readonly SYMLINKS
 
 # Validate that all symlink sources exist
 for target in "${SYMLINKS[@]}"; do
-    [[ -d "$target" ]] || error_exit "Symlink source directory not found: $(display_path "$target")"
+    [[ -e "$target" ]] || error_exit "Symlink source not found: $(display_path "$target")"
 done
 
 ################################################################################
