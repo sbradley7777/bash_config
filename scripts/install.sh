@@ -153,9 +153,9 @@ build_config_file_list() {
     [[ ${#config_files_to_process[@]} -gt 0 ]] && return 0 || return 1
 }
 
-# Backup a single file to backup directory
+# Backup a single file or directory to backup directory
 # Arguments:
-#   $1 - Full path to file to backup
+#   $1 - Full path to file or directory to backup
 # Globals:
 #   BACKUP_DIR - Backup directory path
 # Output:
@@ -165,13 +165,17 @@ backup_file() {
     local filename
     filename="$(get_basename "$file_path")"
 
-    cp "$file_path" "$BACKUP_DIR/" || error_exit "Failed to backup $filename"
+    if [[ -d "$file_path" ]]; then
+        cp -r "$file_path" "$BACKUP_DIR/" || error_exit "Failed to backup directory $filename"
+    else
+        cp "$file_path" "$BACKUP_DIR/" || error_exit "Failed to backup $filename"
+    fi
     echo "  Backed up: $filename"
 }
 
-# Remove a single file or symlink
+# Remove a single file, directory, or symlink
 # Arguments:
-#   $1 - Full path to file/symlink to remove
+#   $1 - Full path to file/directory/symlink to remove
 # Globals:
 #   enable_dry_run - If true, only show what would be done
 # Output:
@@ -182,15 +186,15 @@ remove_file() {
     if [[ "$enable_dry_run" == true ]]; then
         echo "  [DRY RUN] Removed: $(display_path "$file_path")"
     else
-        rm -f "$file_path" || error_exit "Failed to remove $(display_path "$file_path")"
+        rm -rf "$file_path" || error_exit "Failed to remove $(display_path "$file_path")"
         echo "  Removed: $(display_path "$file_path")"
     fi
 }
 
-# Copy a single file with formatted display
+# Copy a single file or directory with formatted display
 # Arguments:
-#   $1 - Source file path
-#   $2 - Destination file path
+#   $1 - Source file or directory path
+#   $2 - Destination file or directory path
 # Globals:
 #   enable_dry_run - If true, only show what would be done
 #   FILES_TO_INSTALL - Used to calculate max path length for alignment
@@ -219,7 +223,11 @@ copy_file() {
     if [[ "$enable_dry_run" == true ]]; then
         echo "  [DRY RUN] Copy: $padded_source  ->  $dest_display"
     else
-        cp "$source_file" "$dest_file" || error_exit "Failed to copy $filename"
+        if [[ -d "$source_file" ]]; then
+            cp -r "$source_file" "$dest_file" || error_exit "Failed to copy directory $filename"
+        else
+            cp "$source_file" "$dest_file" || error_exit "Failed to copy $filename"
+        fi
         echo "  Installed: $padded_source  ->  $dest_display"
     fi
 }
