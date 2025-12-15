@@ -27,6 +27,13 @@ bash_config/
 
 See **[bash/README.md](https://github.com/sbradley7777/bash_config/blob/master/bash/README.md)** for detailed information about the bash configuration files.
 
+## Requirements
+
+- **bash 4.0 or later** - Required for associative arrays used in installation script
+- **git** - Required for repository cloning and project validation
+
+Most modern Linux distributions and macOS systems include these by default.
+
 ## Quick Start
 
 ### Installation

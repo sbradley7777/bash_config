@@ -5,15 +5,21 @@
 #   Removes existing configuration files and copies new ones from the repository.
 #
 # Usage:
-#   install.sh [-h] [-n]
+#   install.sh [-h] [-n] [-p <project_root>]
 #
 # Options:
-#   -h    Show this help message and exit
-#   -n    Dry run - show what would be done without making changes
+#   -h              Show this help message and exit
+#   -n              Dry run - show what would be done without making changes
+#   -p <path>       Specify project root directory (auto-detected if not provided)
 #
 # Examples:
 #   $ ./install.sh
 #   $ ./install.sh -n
+#   $ ./install.sh -p ~/github/bash_config
+#
+# Dependencies:
+#   - bash 4.0 or later (for associative arrays)
+#   - git
 #
 # Notes:
 #   This script will automatically create timestamped backups of existing bash
@@ -57,16 +63,16 @@ Options:
   -p <path>       Specify project root directory (auto-detected if not provided)
 
 Examples:
-  • Run with auto-detected project root:
+  - Run with auto-detected project root:
     $ ./$(basename "$0")
 
-  • Preview changes without making modifications:
+  - Preview changes without making modifications:
     $ ./$(basename "$0") -n
 
-  • Specify project root directory explicitly:
+  - Specify project root directory explicitly:
     $ ./$(basename "$0") -p ~/github/bash_config
 
-  • Dry run with explicit project root:
+  - Dry run with explicit project root:
     $ ./$(basename "$0") -n -p ~/github/bash_config
 
 Backups are saved to: ~/.bash_backup_<timestamp>/ (e.g., ~/.bash_backup_20251215_103045/)
