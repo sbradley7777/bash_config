@@ -27,6 +27,8 @@ bash_config/
 
 See **[bash/README.md](https://github.com/sbradley7777/bash_config/blob/master/bash/README.md)** for detailed information about the bash configuration files.
 
+***The previous `bash` scripts that are no longer in the upstream version of the project can be found in previous versions: [`bash_config`/archive at v1.9.0](https://github.com/sbradley7777/bash_config/tree/v1.9.0/archive).***
+
 ## Requirements
 
 - **bash 4.0 or later** - Required for associative arrays used in installation script
