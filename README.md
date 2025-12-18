@@ -21,7 +21,9 @@ bash_config/
 │   ├── .aliases.macos  # macOS-specific aliases
 │   ├── .functions.sh   # Universal shell functions
 │   └── .functions-macos.sh  # macOS-specific functions
-├── bin/                # Utility scripts (15 scripts)
+├── bin/                # Utility scripts organized by category
+│   ├── gh_utils/       # GitHub utility scripts (15 scripts)
+│   └── gh_pre-commit/  # Pre-commit linter reporting tools (4 scripts + README)
 └── README.md           # This file
 ```
 
@@ -61,7 +63,9 @@ The installer will:
 - Create timestamped backups of existing configuration files
 - Remove old configuration files
 - Install new configuration files from `bash/`
-- Create symlink: `~/bin/bin.github` → repository's `bin/` directory
+- Create symlinks for each subdirectory in `bin/`:
+  - `~/bin/gh_utils` → repository's `bin/gh_utils/` directory
+  - `~/bin/gh_pre-commit` → repository's `bin/gh_pre-commit/` directory
 
 **Preview changes without making modifications:**
 ```bash
@@ -84,9 +88,11 @@ If you prefer manual installation:
    cp ~/github/bash_config/bash/{.aliases.linux,.aliases.macos,.bash_profile,.bashrc,.functions.sh,.functions-macos.sh} ~/
    ```
 
-3. Link the bin directory:
+3. Link the bin subdirectories:
    ```bash
-   ln -s ~/github/bash_config/bin ~/bin/bin.github
+   mkdir -p ~/bin
+   ln -s ~/github/bash_config/bin/gh_utils ~/bin/gh_utils
+   ln -s ~/github/bash_config/bin/gh_pre-commit ~/bin/gh_pre-commit
    ```
 
 4. Reload your shell:
@@ -101,38 +107,53 @@ After installation, the bash configuration will automatically:
 - Load universal and platform-specific functions
 - Configure shell history, prompt, and environment variables
 
-Utility scripts will be available at `~/bin/bin.github/`.
+Utility scripts will be available via symlinks in `~/bin/`:
+- GitHub utilities: `~/bin/gh_utils/`
+- Linter reporting tools: `~/bin/gh_pre-commit/`
 
 ## Featured Utility Scripts
 
-The **[`bin/`](https://github.com/sbradley7777/bash_config/tree/master/bin)** directory includes 15+ utility scripts for common tasks:
+### GitHub Utilities (`bin/gh_utils/`)
+
+The **[`bin/gh_utils/`](https://github.com/sbradley7777/bash_config/tree/master/bin/gh_utils)** directory includes 15 production-ready utility scripts for common tasks:
 
 **File Operations:**
-- **[`dusize.sh`](https://github.com/sbradley7777/bash_config/blob/master/bin/dusize.sh)** - Display directory sizes in human-readable format
-- **[`convert-bytes.sh`](https://github.com/sbradley7777/bash_config/blob/master/bin/convert-bytes.sh)** - Convert bytes to human-readable units
+- **[`dusize.sh`](https://github.com/sbradley7777/bash_config/blob/master/bin/gh_utils/dusize.sh)** - Display directory sizes in human-readable format
+- **[`convert-bytes.sh`](https://github.com/sbradley7777/bash_config/blob/master/bin/gh_utils/convert-bytes.sh)** - Convert bytes to human-readable units
 
 **Network Tools:**
-- **[`check_ssl.sh`](https://github.com/sbradley7777/bash_config/blob/master/bin/check_ssl.sh)** - Test SSL/TLS protocol versions on remote servers
-- **[`gethostip.sh`](https://github.com/sbradley7777/bash_config/blob/master/bin/gethostip.sh)** - Resolve hostname to IP address
-- **[`getdstip.sh`](https://github.com/sbradley7777/bash_config/blob/master/bin/getdstip.sh)** - Get destination IP from network routes
-- **[`ping-test.sh`](https://github.com/sbradley7777/bash_config/blob/master/bin/ping-test.sh)** - Advanced ping testing utility
+- **[`check_ssl.sh`](https://github.com/sbradley7777/bash_config/blob/master/bin/gh_utils/check_ssl.sh)** - Test SSL/TLS protocol versions on remote servers
+- **[`gethostip.sh`](https://github.com/sbradley7777/bash_config/blob/master/bin/gh_utils/gethostip.sh)** - Resolve hostname to IP address
+- **[`getdstip.sh`](https://github.com/sbradley7777/bash_config/blob/master/bin/gh_utils/getdstip.sh)** - Get destination IP from network routes
+- **[`ping-test.sh`](https://github.com/sbradley7777/bash_config/blob/master/bin/gh_utils/ping-test.sh)** - Advanced ping testing utility
 
 **Development Tools:**
-- **[`findregexs.sh`](https://github.com/sbradley7777/bash_config/blob/master/bin/findregexs.sh)** - Search for regex patterns across files
-- **[`prefix_space.sh`](https://github.com/sbradley7777/bash_config/blob/master/bin/prefix_space.sh)** - Add leading spaces to file lines
-- **[`today.sh`](https://github.com/sbradley7777/bash_config/blob/master/bin/today.sh)** - Display current date and time information
+- **[`findregexs.sh`](https://github.com/sbradley7777/bash_config/blob/master/bin/gh_utils/findregexs.sh)** - Search for regex patterns across files
+- **[`prefix_space.sh`](https://github.com/sbradley7777/bash_config/blob/master/bin/gh_utils/prefix_space.sh)** - Add leading spaces to file lines
+- **[`today.sh`](https://github.com/sbradley7777/bash_config/blob/master/bin/gh_utils/today.sh)** - Display current date and time information
 
 **System Administration:**
-- **[`convert-audit_timestamps.sh`](https://github.com/sbradley7777/bash_config/blob/master/bin/convert-audit_timestamps.sh)** - Convert audit log timestamps
-- **[`convert-blocks_to_gigabytes.sh`](https://github.com/sbradley7777/bash_config/blob/master/bin/convert-blocks_to_gigabytes.sh)** - Convert disk blocks to GB
-- **[`hosts-generator.sh`](https://github.com/sbradley7777/bash_config/blob/master/bin/hosts-generator.sh)** - Generate /etc/hosts entries
+- **[`convert-audit_timestamps.sh`](https://github.com/sbradley7777/bash_config/blob/master/bin/gh_utils/convert-audit_timestamps.sh)** - Convert audit log timestamps
+- **[`convert-blocks_to_gigabytes.sh`](https://github.com/sbradley7777/bash_config/blob/master/bin/gh_utils/convert-blocks_to_gigabytes.sh)** - Convert disk blocks to GB
+- **[`hosts-generator.sh`](https://github.com/sbradley7777/bash_config/blob/master/bin/gh_utils/hosts-generator.sh)** - Generate /etc/hosts entries
 
 **Package Management (RPM):**
-- **[`rpm-source.sh`](https://github.com/sbradley7777/bash_config/blob/master/bin/rpm-source.sh)** - Download RPM source packages
-- **[`rpmxtract.sh`](https://github.com/sbradley7777/bash_config/blob/master/bin/rpmxtract.sh)** - Extract files from RPM packages
+- **[`rpm-source.sh`](https://github.com/sbradley7777/bash_config/blob/master/bin/gh_utils/rpm-source.sh)** - Download RPM source packages
+- **[`rpmxtract.sh`](https://github.com/sbradley7777/bash_config/blob/master/bin/gh_utils/rpmxtract.sh)** - Extract files from RPM packages
 
 **Documentation:**
-- **[`convert-manpages.sh`](https://github.com/sbradley7777/bash_config/blob/master/bin/convert-manpages.sh)** - Convert man pages to text format
+- **[`convert-manpages.sh`](https://github.com/sbradley7777/bash_config/blob/master/bin/gh_utils/convert-manpages.sh)** - Convert man pages to text format
+
+### Pre-commit Linter Reporting Tools (`bin/gh_pre-commit/`)
+
+The **[`bin/gh_pre-commit/`](https://github.com/sbradley7777/bash_config/tree/master/bin/gh_pre-commit)** directory includes 4 Python/Bash tools for analyzing Python projects with pre-commit linters:
+
+- **[`collect_linter_stats.sh`](https://github.com/sbradley7777/bash_config/blob/master/bin/gh_pre-commit/collect_linter_stats.sh)** - Run pre-commit linters and collect raw statistics
+- **[`linter_stats_to_json.py`](https://github.com/sbradley7777/bash_config/blob/master/bin/gh_pre-commit/linter_stats_to_json.py)** - Convert raw linter stats to JSON format
+- **[`generate_linter_report.py`](https://github.com/sbradley7777/bash_config/blob/master/bin/gh_pre-commit/generate_linter_report.py)** - Generate markdown reports from linter data
+- **[`precommit_tool_finder.py`](https://github.com/sbradley7777/bash_config/blob/master/bin/gh_pre-commit/precommit_tool_finder.py)** - Discover pre-commit tool paths dynamically
+
+See **[`bin/gh_pre-commit/README.md`](https://github.com/sbradley7777/bash_config/blob/master/bin/gh_pre-commit/README.md)** for complete documentation on using the linter reporting tools.
 
 All scripts include comprehensive help documentation accessible with the `-h` flag.
 
