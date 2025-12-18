@@ -26,7 +26,7 @@
 #   configuration files before removing them. Backups are saved to:
 #   ~/.bash_backup_<timestamp>/ (e.g., ~/.bash_backup_20251215_103045/)
 #   It will then install new files from the repository's bash/ directory.
-#   Also creates a symlink from ~/bin/bin.github to the repository's bin/ directory.
+#   Also creates symlinks for each directory in the repository's bin/ directory to ~/bin/.
 #   Script should be run from the repository's scripts/ directory.
 #
 # Exit Codes:
@@ -476,6 +476,32 @@ remove_symlinks() {
     done
 }
 
+# Build symlinks array by discovering directories in bin/
+# Loops through all directories in $PROJECT_ROOT/bin and creates
+# symlink entries for each one at $HOME/bin/<dirname>
+# Only creates symlinks for directories that contain files
+# Arguments:
+#   None (uses PROJECT_ROOT global)
+# Output:
+#   Populates global associative array: SYMLINKS
+# Returns:
+#   0 if directories found, 1 if no directories found
+build_symlinks_list() {
+    # Loop through all directories in bin/ and create symlink entries
+    for dir_path in "$PROJECT_ROOT/bin"/*; do
+        if [[ -d "$dir_path" ]]; then
+            # Check if directory contains any files
+            if [[ -n "$(find "$dir_path" -type f -print -quit)" ]]; then
+                local dir_name
+                dir_name="$(basename "$dir_path")"
+                SYMLINKS["$HOME/bin/$dir_name"]="$dir_path"
+            fi
+        fi
+    done
+
+    [[ ${#SYMLINKS[@]} -gt 0 ]] && return 0 || return 1
+}
+
 # Create symlinks from repository directories to home directory
 # Uses associative array SYMLINKS (key: destination path, value: source path)
 # All sources are pre-validated to exist
@@ -636,8 +662,12 @@ done
 ################################################################################
 # Symlinks to create (associative array)
 # Key: destination path (symlink location), Value: source path (target)
+# Automatically discovers all directories in $PROJECT_ROOT/bin and creates
+# symlinks for each one at $HOME/bin/<dirname>
 declare -A SYMLINKS
-SYMLINKS["$HOME/bin/bin.github"]="$PROJECT_ROOT/bin"
+
+# Build symlinks list from directories in bin/ (only non-empty directories)
+build_symlinks_list
 readonly SYMLINKS
 
 # Validate that all symlink sources exist
