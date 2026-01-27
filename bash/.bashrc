@@ -27,6 +27,9 @@ fi
 if [[ -f "$HOME/.functions.sh" ]]; then
     source "$HOME/.functions.sh"
 fi
+if [[ -f "$HOME/.functions-macos.sh" ]]; then
+    source "$HOME/.functions-macos.sh"
+fi
 if [[ -f "$HOME/.bashrc.priv" ]]; then
     source "$HOME/.bashrc.priv"
 fi

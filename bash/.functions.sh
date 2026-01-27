@@ -147,12 +147,21 @@ _complete_hosts() {
 #   sshto rhws rh81
 #   sshto rhws rh81 root
 sshto() {
-    local ip
-    ip=$(gethostip.sh -s "$1" -m "$2")
-    if [[ -z "$ip" ]]; then
+    local ip output
+    output=$(gethostip.sh -s "$1" -m "$2" 2>&1)
+    local exit_code=$?
+
+    # Extract IP address from output (handles cases where SSH warnings are mixed in)
+    # Look for any line containing a valid IP address pattern
+    ip=$(echo "$output" | grep -oE '[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}' | tail -1)
+
+    if [[ $exit_code -ne 0 ]] || [[ -z "$ip" ]]; then
         echo "Error: Could not resolve IP for site=$1, machine=$2"
+        echo "gethostip.sh output: $output"
         return 1
     fi
+
+    echo "Connecting to $ip..."
     if [[ -n "$3" ]]; then
         ssh "$3@$ip"
     else
