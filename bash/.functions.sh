@@ -90,13 +90,6 @@ filesize() {
     fi
 }
 
-# Use Git's colored diff when available
-if hash git &>/dev/null; then
-    diff() {
-        git diff --no-index --color-words "$@"
-    }
-fi
-
 ################################################################################
 # Git Functions
 ################################################################################
@@ -143,4 +136,26 @@ _complete_hosts() {
     # shellcheck disable=SC2207
     COMPREPLY=($(compgen -W "${host_list}" -- "$cur"))
     return 0
+}
+
+# SSH to host using gethostip.sh to resolve IP
+# Arguments:
+#   $1 - Site name (e.g., rhws)
+#   $2 - Machine name (e.g., rh81)
+#   $3 - Optional username (if not provided, uses default SSH config)
+# Example:
+#   sshto rhws rh81
+#   sshto rhws rh81 root
+sshto() {
+    local ip
+    ip=$(gethostip.sh -s "$1" -m "$2")
+    if [[ -z "$ip" ]]; then
+        echo "Error: Could not resolve IP for site=$1, machine=$2"
+        return 1
+    fi
+    if [[ -n "$3" ]]; then
+        ssh "$3@$ip"
+    else
+        ssh "$ip"
+    fi
 }

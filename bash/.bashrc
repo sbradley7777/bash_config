@@ -22,9 +22,11 @@ elif [[ "$OS_TYPE" == "Darwin" ]] && [[ -f "$HOME/.aliases.macos" ]]; then
 fi
 
 ################################################################################
-# Source in various other aliases
+# Source in various other aliases and functions
 ################################################################################
-# For private aliases that will only reside on this machine
+if [[ -f "$HOME/.functions.sh" ]]; then
+    source "$HOME/.functions.sh"
+fi
 if [[ -f "$HOME/.bashrc.priv" ]]; then
     source "$HOME/.bashrc.priv"
 fi
