@@ -20,6 +20,9 @@ if [[ "$OS_TYPE" == "Linux" ]] && [[ -f "$HOME/.aliases.linux" ]]; then
 elif [[ "$OS_TYPE" == "Darwin" ]] && [[ -f "$HOME/.aliases.macos" ]]; then
     source "$HOME/.aliases.macos"
 fi
+if  [[ -f "$HOME/.aliases.priv" ]]; then
+    source "$HOME/.aliases.priv"
+fi
 
 ################################################################################
 # Source in various other aliases and functions
