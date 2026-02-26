@@ -1,8 +1,23 @@
 #!/usr/bin/env python3
 """Analyze Python files for pre-commit linter suppression comments.
 
-This script scans Python files to identify all inline and file-level suppression comments used by pre-commit linters (flake8,
-mypy, pylint, ruff, refurb, vulture, etc.) and provides detailed statistics about their usage.
+This script scans Python files to identify all inline and file-level suppression comments used by pre-commit linters and
+provides detailed statistics about their usage.
+
+Supported Linters:
+    This tool currently analyzes suppression comments for Python linters only. Based on typical pre-commit configurations,
+    the following linters are detected:
+
+    - flake8 (and plugins): Detects '# noqa:' comments with error codes (E501, DUO, SCS, CCR, ECE, TAE, MDA, etc.)
+    - ruff: Detects both '# noqa:' and '# ruff: noqa:' comment styles
+    - pydoclint: Detects '# noqa: DOC' comments for docstring violations
+    - pylint: Detects '# pylint: disable=' comments with error codes or error names
+    - mypy: Detects '# type: ignore' comments with optional error types in brackets
+    - refurb: Detects both '# refurb: ignore' and '# noqa: FURB' comment styles
+    - vulture: Detects '# noqa: F841' (unused variable) and '# noqa: F401' (unused import) comments
+
+    Note: vulture uses flake8's noqa syntax rather than having its own ignore format, so vulture suppressions are
+    reported as 'flake8' in the statistics.
 
 The tool helps identify where code quality checks are being suppressed, allowing developers to review and potentially address
 underlying issues rather than hiding them. This is particularly useful for:
@@ -36,9 +51,6 @@ Output:
     - Statistics by error code (which specific errors are most commonly ignored)
     - Top files with most ignores (files that may need refactoring)
     - Overall summary metrics (coverage, averages, distribution)
-
-TODO:
-    - Identify and add subsection to list hooks that are using error names instead of error code
 
 Requirements:
     - Python 3.12+
@@ -219,18 +231,6 @@ class ColoredFormatter(logging.Formatter):
 # #############################################################################################################################
 # Logging Functions
 # #############################################################################################################################
-def get_logger(name: str = ROOT_LOGGER_NAME) -> logging.Logger:
-    """Get the logger instance for linter_ignores_report.
-
-    Args:
-        name (str): Logger name. Defaults to ROOT_LOGGER_NAME ('linter_ignores_report').
-
-    Returns:
-        logging.Logger: The logger instance.
-    """
-    return logging.getLogger(name)
-
-
 def _configure_stream_handler(logger: logging.Logger, handler_name: str, log_level: int,
                               formatter: logging.Formatter) -> None:
     """Configure or update StreamHandler for a logger.
@@ -258,6 +258,18 @@ def _configure_stream_handler(logger: logging.Logger, handler_name: str, log_lev
         stream_handler.setLevel(log_level)
         stream_handler.setFormatter(formatter)
         logger.addHandler(stream_handler)
+
+
+def get_logger(name: str = ROOT_LOGGER_NAME) -> logging.Logger:
+    """Get the logger instance for linter_ignores_report.
+
+    Args:
+        name (str): Logger name. Defaults to ROOT_LOGGER_NAME ('linter_ignores_report').
+
+    Returns:
+        logging.Logger: The logger instance.
+    """
+    return logging.getLogger(name)
 
 
 def setup_logging(disable_logging: bool = False, enable_debug: bool = False) -> None:
@@ -288,16 +300,15 @@ def setup_logging(disable_logging: bool = False, enable_debug: bool = False) -> 
 class IgnoreOccurrence:  # pylint: disable=too-few-public-methods
     """Represents a single linter suppression occurrence in a Python file.
 
-    Each instance captures one suppression comment found during file scanning, including its location, the tool being suppressed, the
-    specific error codes (if any), and the full line of code for context.
+    Each instance captures one suppression comment found during file scanning, including its location, the tool being
+    suppressed, the specific error codes (if any), and the full line of code for context.
 
     Args:
         file_path (Path): Absolute path to the file containing the suppression.
         display_path (str): Relative path for display in output.
         line_number (int): Line number where the suppression appears (1-indexed).
         tool (str): Name of the linter tool (e.g., 'noqa', 'type-ignore', 'pylint').
-        error_codes (Sequence[str]): Sequence of error codes being suppressed. Contains ('<all>',) for bare suppressions without
-            specific codes.
+        error_codes (Sequence[str]): Sequence of error codes being suppressed. Contains ('<all>',) for bare suppressions without specific codes.
         line_content (str): The full line of code containing the suppression comment.
     """
     def __init__(self, file_path: Path, display_path: str, line_number: int, tool: str, error_codes: Sequence[str], line_content: str) -> None:
@@ -312,11 +323,11 @@ class IgnoreOccurrence:  # pylint: disable=too-few-public-methods
 class Statistics:  # pylint: disable=too-few-public-methods
     """Container for statistical analysis of linter suppressions.
 
-    Aggregates suppression data from all scanned files to provide comprehensive metrics including file counts, tool distribution,
-    error code frequency, and per-file statistics. Used to generate detailed reports for code quality audits and refactoring
-    planning.
-    """
+    Aggregates suppression data from all scanned files to provide comprehensive metrics including file counts, tool
+    distribution, error code frequency, and per-file statistics. Used to generate detailed reports for code quality audits and
+    refactoring planning.
 
+    """
     def __init__(self) -> None:
         self.total_files_scanned: int = 0
         self.files_with_ignores: int = 0
@@ -328,52 +339,14 @@ class Statistics:  # pylint: disable=too-few-public-methods
 
 
 # #############################################################################################################################
-# Argument Parsing
-# #############################################################################################################################
-def _get_args() -> argparse.Namespace:
-    """Parse and validate command-line arguments for the linter_ignores_report script.
-
-    Configures argument parser with path (-p/--path) and debug (-d/--debug) options. Validates that the specified path exists
-    before returning parsed arguments. Exits with error message if path validation fails.
-
-    Returns:
-        argparse.Namespace: Parsed arguments containing the target path and logging options (path, debug).
-    """
-    parser = argparse.ArgumentParser(
-        description='Analyze Python files for pre-commit linter suppression comments.',
-        epilog='Examples:\n'
-        '  %(prog)s -p ~/projects/myproject/src/main.py        # Scan single file\n'
-        '  %(prog)s -p ~/projects/myproject                    # Scan directory recursively\n'
-        '  %(prog)s -p ~/projects/myproject/src -d             # Scan with debug logging\n',
-        formatter_class=argparse.RawDescriptionHelpFormatter,
-    )
-
-    # Required arguments
-    required_group = parser.add_argument_group('Required Arguments', 'Arguments that must be specified')
-    required_group.add_argument('-p', '--path', type=str, dest='path', metavar='<path>', required=True,
-                                help='path to a Python file or directory to scan for linter suppression comments')
-
-    # Optional arguments
-    optional_group = parser.add_argument_group('Optional Arguments', 'Arguments to control logging and output')
-    optional_group.add_argument('-d', '--debug', action='store_true', dest='debug', default=False,
-                                help='enable debug logging for verbose output (default: %(default)s)')
-
-    args = parser.parse_args()
-    # Validate path exists
-    path = Path(args.path)
-    if not path.exists():
-        parser.error('Path does not exist: %s' % (path))
-    return args
-
-
-# #############################################################################################################################
 # File Discovery
 # #############################################################################################################################
 def _find_python_files(path: Path) -> list[Path]:
     """Find all Python files in the given path.
 
-    For single files, validates .py extension and returns single-element list. For directories, recursively searches for all .py
-    files using Path.rglob(). Prints warning to stderr and returns empty list if single file path does not have .py extension.
+    For single files, validates .py extension and returns single-element list. For directories, recursively searches for all
+    .py files using Path.rglob(). Prints warning to stderr and returns empty list if single file path does not have .py
+    extension.
 
     Args:
         path (Path): Path to a file or directory. If file, returns single-item list. If directory, recursively finds
@@ -397,9 +370,9 @@ def _find_python_files(path: Path) -> list[Path]:
 def _extract_ignore_info(line: str, line_number: int, file_path: Path, base_path: Path) -> list[IgnoreOccurrence]:
     """Extract linter suppression information from a single line of code.
 
-    Searches the line for suppression comments matching patterns defined in IGNORE_PATTERNS. For each match, extracts the tool name
-    and error codes (if specified). Bare suppressions without error codes are recorded as ('<all>',). Multiple suppression types on
-    the same line (e.g., both # noqa and # type: ignore) result in multiple IgnoreOccurrence objects.
+    Searches the line for suppression comments matching patterns defined in IGNORE_PATTERNS. For each match, extracts the tool
+    name and error codes (if specified). Bare suppressions without error codes are recorded as ('<all>',). Multiple suppression
+    types on the same line (e.g., both # noqa and # type: ignore) result in multiple IgnoreOccurrence objects.
 
     Args:
         line (str): The line of code to analyze for suppression comments.
@@ -411,9 +384,8 @@ def _extract_ignore_info(line: str, line_number: int, file_path: Path, base_path
         list[IgnoreOccurrence]: List of IgnoreOccurrence objects found in the line (may be empty if no suppressions found).
     """
     occurrences: list[IgnoreOccurrence] = []
-    ignore_patterns = IGNORE_PATTERNS
     display_path = _format_file_path(file_path, base_path)
-    for tool, pattern in ignore_patterns.items():
+    for tool, pattern in IGNORE_PATTERNS.items():
         match = pattern.search(line)
         if match:
             # Extract error codes if present
@@ -433,16 +405,16 @@ def _scan_file(file_path: Path, base_path: Path) -> list[IgnoreOccurrence]:
     """Scan a single Python file for linter suppression comments.
 
     Opens the file with UTF-8 encoding and processes each line sequentially, extracting suppression information via
-    _extract_ignore_info(). Handles OSError and UnicodeDecodeError gracefully by printing warning to stderr and returning partial
-    results.
+    _extract_ignore_info(). Handles OSError and UnicodeDecodeError gracefully by printing warning to stderr and returning
+    partial results.
 
     Args:
         file_path (Path): Path to the Python file to scan for suppression comments.
         base_path (Path): Base search path for formatting relative file paths.
 
     Returns:
-        list[IgnoreOccurrence]: List of IgnoreOccurrence objects found in the file (empty list if file cannot be read or contains
-            no suppressions).
+        list[IgnoreOccurrence]: List of IgnoreOccurrence objects found in the file (empty list if file cannot be read or
+            contains no suppressions).
     """
     occurrences: list[IgnoreOccurrence] = []
     try:
@@ -457,8 +429,8 @@ def _scan_file(file_path: Path, base_path: Path) -> list[IgnoreOccurrence]:
 def _scan_all_files(file_list: list[Path], base_path: Path) -> list[IgnoreOccurrence]:
     """Scan multiple Python files for linter suppression comments.
 
-    Iterates through all provided file paths and aggregates suppression occurrences from each file. Uses _scan_file() for individual
-    file processing.
+    Iterates through all provided file paths and aggregates suppression occurrences from each file. Uses _scan_file() for
+    individual file processing.
 
     Args:
         file_list (list[Path]): List of Python file paths to scan for suppression comments.
@@ -488,8 +460,7 @@ def _calculate_statistics(occurrences: list[IgnoreOccurrence], total_files: int)
         total_files (int): Total number of Python files scanned (for coverage calculation).
 
     Returns:
-        Statistics: Statistics object containing computed metrics (file counts, tool distribution, error code frequency, per-file
-            statistics).
+        Statistics: Statistics object containing computed metrics (file counts, tool distribution, error code frequency, per-file statistics).
     """
     stats = Statistics()
     stats.total_files_scanned = total_files
@@ -531,15 +502,14 @@ def _format_section_header(section_name: str) -> str:
 def _format_tool_name(tool: str) -> str:
     """Convert internal tool name to display-friendly format.
 
-    Maps internal pattern keys to user-friendly display names for output formatting. Returns the original tool name if no mapping
-    exists.
+    Maps internal pattern keys to user-friendly display names for output formatting. Returns the original tool name if no
+    mapping exists.
 
     Args:
         tool (str): Internal tool identifier from IGNORE_PATTERNS keys (e.g., 'noqa', 'type-ignore', 'pylint').
 
     Returns:
-        str: Human-readable tool name for display (e.g., 'flake8', 'mypy', 'pylint'). Returns original tool name if not in
-            mapping.
+        str: Human-readable tool name for display (e.g., 'flake8', 'mypy', 'pylint'). Returns original tool name if not in mapping.
     """
     return {
         'noqa': 'flake8',
@@ -553,8 +523,8 @@ def _format_tool_name(tool: str) -> str:
 def _format_file_path(file_path: Path, base_path: Path) -> str:
     """Format file path as relative to the parent of the base search path.
 
-    Converts absolute file paths to relative display paths that include the base directory name. This provides context about which
-    directory was searched while keeping paths concise.
+    Converts absolute file paths to relative display paths that include the base directory name. This provides context about
+    which directory was searched while keeping paths concise.
 
     Args:
         file_path (Path): Absolute path to the file to format.
@@ -568,6 +538,7 @@ def _format_file_path(file_path: Path, base_path: Path) -> str:
         >>> file = Path('/home/user/projects/myapp/src/utils/helper.py')
         >>> _format_file_path(file, base)
         'src/utils/helper.py'
+
     """
     try:
         # Get parent of base_path to make paths relative to it
@@ -582,9 +553,9 @@ def _format_file_path(file_path: Path, base_path: Path) -> str:
 def _format_table(table_name: str, headers: tuple[str, ...], rows: list[tuple[str | int, ...]], align: tuple[str, ...] | None = None) -> str:
     """Format data as an aligned table with centered table name.
 
-    Creates a formatted table with a centered table name, column headers, separator line, and aligned data rows. Supports left and
-    right alignment per column. Auto-detects alignment based on data types if not specified (integers right-aligned, strings
-    left-aligned).
+    Creates a formatted table with a centered table name, column headers, separator line, and aligned data rows. Supports left
+    and right alignment per column. Auto-detects alignment based on data types if not specified (integers right-aligned,
+    strings left-aligned).
 
     Args:
         table_name: Name of the table, centered above the table.
@@ -594,37 +565,22 @@ def _format_table(table_name: str, headers: tuple[str, ...], rows: list[tuple[st
 
     Returns:
         str: Formatted table string with centered name, headers, separator, and aligned rows. Empty string if no rows.
-
-    Examples:
-        >>> headers = ('Tool', 'Count', 'Percentage')
-        >>> rows = [('pylint', 45, 67), ('flake8', 22, 33)]
-        >>> print(_format_table('Statistics by Tool', headers, rows, ('left', 'right', 'right')))
-           Statistics by Tool
-        Tool      Count  Percentage
-        ------  -------  ----------
-        pylint       45          67
-        flake8       22          33
     """
     if not rows:
         return ''
-
     # Auto-detect alignment if not provided
     if align is None:
         align = tuple('right' if isinstance(rows[0][i], int) else 'left' for i in range(len(headers)))
-
     # Calculate column widths (max of header width and data width)
     col_widths = [len(str(h)) for h in headers]
     for row in rows:
         for i, cell in enumerate(row):
             col_widths[i] = max(col_widths[i], len(str(cell)))
-
     # Calculate total table width (column widths + separators)
     table_width = sum(col_widths) + (len(col_widths) - 1) * 2  # 2 spaces between columns
-
     # Center table name over the table
     lines = []
     lines.append(table_name.center(table_width))
-
     # Build header line
     header_parts = []
     separator_parts = []
@@ -634,10 +590,8 @@ def _format_table(table_name: str, headers: tuple[str, ...], rows: list[tuple[st
         else:
             header_parts.append(str(header).ljust(width))
         separator_parts.append('-' * width)
-
     lines.append('  '.join(header_parts))
     lines.append('  '.join(separator_parts))
-
     # Build data rows
     for row in rows:
         row_parts = []
@@ -647,7 +601,6 @@ def _format_table(table_name: str, headers: tuple[str, ...], rows: list[tuple[st
             else:
                 row_parts.append(str(cell).ljust(width))
         lines.append('  '.join(row_parts))
-
     return '\n'.join(lines)
 
 
@@ -665,7 +618,6 @@ def _format_file_results(occurrences: list[IgnoreOccurrence]) -> str:
     """
     if not occurrences:
         return 'No linter suppressions found.'
-
     lines = []
     # Sort occurrences by file_path first
     sorted_occurrences = sorted(occurrences, key=lambda x: x.file_path)
@@ -681,18 +633,16 @@ def _format_file_results(occurrences: list[IgnoreOccurrence]) -> str:
             error_codes_display = ', '.join(occurrence.error_codes)
             context = occurrence.line_content.strip()
             rows.append((occurrence.line_number, tool_display, error_codes_display, context))
-
         table = _format_table('File: %s' % (display_path), ('Line', 'Tool', 'Error Codes', 'Context'), rows, ('right', 'left', 'left', 'left'))
         lines.append('\n%s' % (table))
-
     return '\n'.join(lines)
 
 
 def _format_statistics_by_tool(stats: Statistics) -> str:
     """Format statistics grouped by linter tool.
 
-    Displays suppression counts and percentages for each linter tool, sorted by frequency (highest first). Useful for identifying
-    which linters are most frequently suppressed in the codebase.
+    Displays suppression counts and percentages for each linter tool, sorted by frequency (highest first). Useful for
+    identifying which linters are most frequently suppressed in the codebase.
 
     Args:
         stats (Statistics): Statistics object containing computed metrics including ignores_by_tool distribution.
@@ -702,14 +652,12 @@ def _format_statistics_by_tool(stats: Statistics) -> str:
     """
     if not stats.ignores_by_tool:
         return ''
-
     sorted_tools = sorted(stats.ignores_by_tool.items(), key=operator.itemgetter(1), reverse=True)
     rows = []
     for tool, count in sorted_tools:
         tool_display = _format_tool_name(tool)
         percentage = round((count / stats.total_ignores * 100)) if stats.total_ignores > 0 else 0
         rows.append((tool_display, count, percentage))
-
     return '\n%s' % (_format_table('Statistics by Linter Tool', ('Tool', 'Count', 'Percentage'), rows, ('left', 'right', 'right')))
 
 
@@ -727,21 +675,19 @@ def _format_statistics_by_error_code(stats: Statistics) -> str:
     """
     if not stats.ignores_by_error_code:
         return ''
-
     sorted_codes = sorted(stats.ignores_by_error_code.items(), key=operator.itemgetter(1), reverse=True)
     rows = []
     for error_code, count in sorted_codes:
         percentage = round((count / stats.total_ignores * 100)) if stats.total_ignores > 0 else 0
         rows.append((error_code, count, percentage))
-
     return '\n%s' % (_format_table('Statistics by Error Code', ('Error Code', 'Count', 'Percentage'), rows, ('left', 'right', 'right')))
 
 
 def _format_statistics_by_file(stats: Statistics) -> str:
     """Format statistics showing files with suppressions.
 
-    Displays all files with suppressions, sorted by count (highest first). Helps identify files that may need refactoring or cleanup
-    to reduce technical debt.
+    Displays all files with suppressions, sorted by count (highest first). Helps identify files that may need refactoring or
+    cleanup to reduce technical debt.
 
     Args:
         stats (Statistics): Statistics object containing computed metrics including ignores_per_file counts.
@@ -751,18 +697,17 @@ def _format_statistics_by_file(stats: Statistics) -> str:
     """
     if not stats.ignores_per_file:
         return ''
-
     sorted_files = sorted(stats.ignores_per_file.items(), key=operator.itemgetter(1), reverse=True)
     rows = [(count, stats.file_display_paths[file_path]) for file_path, count in sorted_files]
-
     return '\n%s' % (_format_table('Statistics by File', ('Count', 'File'), rows, ('right', 'left')))
 
 
 def _format_overall_summary(stats: Statistics) -> str:
     """Format overall summary statistics.
 
-    Displays comprehensive summary including: total files scanned, files with/without ignores, coverage percentage, total ignores,
-    average ignores per file, and min/max distribution. Provides high-level overview of suppression usage across the codebase.
+    Displays comprehensive summary including: total files scanned, files with/without ignores, coverage percentage, total
+    ignores, average ignores per file, and min/max distribution. Provides high-level overview of suppression usage across the
+    codebase.
 
     Args:
         stats (Statistics): Statistics object containing computed metrics for summary generation.
@@ -774,23 +719,18 @@ def _format_overall_summary(stats: Statistics) -> str:
     rows.append(('Total Python files scanned', stats.total_files_scanned))
     rows.append(('Files with ignores', stats.files_with_ignores))
     rows.append(('Files without ignores', stats.total_files_scanned - stats.files_with_ignores))
-
     if stats.total_files_scanned > 0:
         percentage = round(stats.files_with_ignores / stats.total_files_scanned * 100)
         rows.append(('Percentage of files with ignores', '%d%%' % (percentage)))
-
     rows.append(('Total ignores found', stats.total_ignores))
-
     if stats.files_with_ignores > 0:
         avg_ignores = round(stats.total_ignores / stats.files_with_ignores)
         rows.append(('Average ignores per file (with ignores)', avg_ignores))
-
     if stats.ignores_per_file:
         max_ignores = max(stats.ignores_per_file.values())
         min_ignores = min(stats.ignores_per_file.values())
         rows.append(('Max ignores in single file', max_ignores))
         rows.append(('Min ignores in single file', min_ignores))
-
     return '\n%s' % (_format_table('Overall Summary', ('Metric', 'Value'), rows, ('left', 'right')))
 
 
@@ -818,14 +758,50 @@ def _format_statistics(stats: Statistics) -> str:
 
 
 # #############################################################################################################################
+# Argument Parsing
+# #############################################################################################################################
+def _get_args() -> argparse.Namespace:
+    """Parse and validate command-line arguments for the linter_ignores_report script.
+
+    Configures argument parser with path (-p/--path) and debug (-d/--debug) options. Validates that the specified path exists
+    before returning parsed arguments. Exits with error message if path validation fails.
+
+    Returns:
+        argparse.Namespace: Parsed arguments containing the target path and logging options (path, debug).
+    """
+    parser = argparse.ArgumentParser(
+        description='Analyze Python files for pre-commit linter suppression comments.',
+        epilog='Examples:\n'
+        '  %(prog)s -p ~/projects/myproject/src/main.py        # Scan single file\n'
+        '  %(prog)s -p ~/projects/myproject                    # Scan directory recursively\n'
+        '  %(prog)s -p ~/projects/myproject/src -d             # Scan with debug logging\n',
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+    )
+    # Required arguments
+    required_group = parser.add_argument_group('Required Arguments', 'Arguments that must be specified')
+    required_group.add_argument('-p', '--path', type=str, dest='path', metavar='<path>', required=True,
+                                help='path to a Python file or directory to scan for linter suppression comments')
+    # Optional arguments
+    optional_group = parser.add_argument_group('Optional Arguments', 'Arguments to control logging and output')
+    optional_group.add_argument('-d', '--debug', action='store_true', dest='debug', default=False,
+                                help='enable debug logging for verbose output (default: %(default)s)')
+    args = parser.parse_args()
+    # Validate path exists
+    path = Path(args.path)
+    if not path.exists():
+        parser.error('Path does not exist: %s' % (path))
+    return args
+
+
+# #############################################################################################################################
 # Main Function
 # #############################################################################################################################
 def main() -> None:
     """Main entry point for the linter_ignores_report script.
 
     Orchestrates the entire process: argument parsing, logging setup, file discovery, scanning, statistics calculation, and
-    output display. Exits with code 1 if no Python files found at specified path. Uses debug logging when -d/--debug flag provided
-    to show detailed execution information including resolved paths, file counts, and occurrence counts.
+    output display. Exits with code 1 if no Python files found at specified path. Uses debug logging when -d/--debug flag
+    provided to show detailed execution information including resolved paths, file counts, and occurrence counts.
     """
     # Parse command-line arguments
     args = _get_args()
