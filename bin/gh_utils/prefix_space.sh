@@ -1,25 +1,28 @@
 #!/bin/bash
 #
 # Description:
-#   Add whitespace prefix before each line in a file while filtering out noise.
-#   Reads a log file and adds configurable whitespace prefix to each line, with
-#   optional filtering to exclude common system log messages (ssh, systemd, etc).
+#   Add whitespace prefix before each line in a file or stdin while filtering out noise.
+#   Reads a log file or piped input and adds configurable whitespace prefix to each line,
+#   with optional filtering to exclude common system log messages (ssh, systemd, etc).
 #
 # Usage:
-#   prefix_space.sh [-h] [-E] [-G] -p <file> [-w <count>]
+#   prefix_space.sh [-h] [-E] [-G] [-w <count>] [file]
 #
 # Options:
 #   -h    Show this help message and exit
-#   -p    Path to the file to process (required)
 #   -w    Prefix whitespace count (default: 2)
 #   -E    Disable optional grep ignores (podman, ansible, CROND, etc.)
 #   -G    Disable all grep ignores
 #
+# Arguments:
+#   file  Path to the file to process (optional, reads from stdin if omitted)
+#
 # Examples:
-#   $ ./prefix_space.sh -p /var/log/messages
-#   $ ./prefix_space.sh -p ~/log.txt -w 4
-#   $ ./prefix_space.sh -p /var/log/messages -E
-#   $ ./prefix_space.sh -p /var/log/messages -G
+#   $ ./prefix_space.sh /var/log/messages
+#   $ ./prefix_space.sh ~/log.txt -w 4
+#   $ cat /tmp/test.txt | ./prefix_space.sh -w 2
+#   $ tail -f /var/log/messages | ./prefix_space.sh -E
+#   $ ./prefix_space.sh /var/log/messages -G
 #
 # Notes:
 #   - Default filters exclude common noise: sshd, systemd-logind, sudo, etc.
@@ -90,23 +93,26 @@ readonly GREP_IGNORES_EXTRAS=(
 ################################################################################
 usage() {
     cat << EOF
-Usage: $(basename "$0") [-h] [-E] [-G] -p <file> [-w <count>]
+Usage: $(basename "$0") [-h] [-E] [-G] [-w <count>] [file]
 
 Description:
-  Add whitespace prefix before each line in a file while filtering out noise.
+  Add whitespace prefix before each line in a file or stdin while filtering out noise.
 
 Options:
   -h    Show this help message and exit
-  -p    Path to the file to process (required)
   -w    Prefix whitespace count (default: 2)
   -E    Disable optional grep ignores (podman, ansible, CROND, etc.)
   -G    Disable all grep ignores
 
+Arguments:
+  file  Path to the file to process (optional, reads from stdin if omitted)
+
 Examples:
-  $ $(basename "$0") -p /var/log/messages
-  $ $(basename "$0") -p ~/log.txt -w 4
-  $ $(basename "$0") -p /var/log/messages -E
-  $ $(basename "$0") -p /var/log/messages -G
+  $ $(basename "$0") /var/log/messages
+  $ $(basename "$0") ~/log.txt -w 4
+  $ cat /tmp/test.txt | $(basename "$0") -w 2
+  $ tail -f /var/log/messages | $(basename "$0") -E
+  $ $(basename "$0") /var/log/messages -G
 EOF
 }
 
@@ -120,19 +126,15 @@ error_exit() {
 ################################################################################
 # Parse Command-Line Options
 ################################################################################
-file_path=""
 prefix_count=$DEFAULT_PREFIX_COUNT
 disable_extras=false
 disable_all=false
 
-while getopts ":hp:w:EG" opt; do
+while getopts ":hw:EG" opt; do
     case "$opt" in
         h)
             usage
             exit 0
-            ;;
-        p)
-            file_path=$OPTARG
             ;;
         w)
             prefix_count=$OPTARG
@@ -155,12 +157,23 @@ while getopts ":hp:w:EG" opt; do
             ;;
     esac
 done
+shift $((OPTIND - 1))
 
 ################################################################################
 # Input Validation
 ################################################################################
-[[ -n "$file_path" ]] || error_exit "Missing required option: -p <file>"
-[[ -f "$file_path" ]] || error_exit "File does not exist: $file_path"
+# Determine input source: file argument or stdin
+if [[ -n "$1" ]]; then
+    file_path="$1"
+    [[ -f "$file_path" ]] || error_exit "File does not exist: $file_path"
+    input_source="$file_path"
+else
+    # No file specified, check if stdin has data
+    if [[ -t 0 ]]; then
+        error_exit "No input provided. Provide a file path or pipe data to stdin"
+    fi
+    input_source="-"
+fi
 
 # Validate prefix_count is numeric
 if ! [[ "$prefix_count" =~ ^[0-9]+$ ]]; then
@@ -175,7 +188,7 @@ prefix=$(printf "%*s" "$prefix_count" "")
 
 # If all filters disabled, just add prefix and exit
 if [[ "$disable_all" = true ]]; then
-    awk -v prefix="$prefix" '{print prefix $0}' "$file_path"
+    awk -v prefix="$prefix" '{print prefix $0}' "$input_source"
     exit 0
 fi
 
@@ -194,5 +207,5 @@ fi
 
 # Filter and add prefix
 # Note: eval is needed to properly handle the quoted patterns
-eval "grep -ai -v $grep_args $file_path" | awk -v prefix="$prefix" '{print prefix $0}'
+eval "grep -ai -v $grep_args $input_source" | awk -v prefix="$prefix" '{print prefix $0}'
 exit 0
