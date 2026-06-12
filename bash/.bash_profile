@@ -6,16 +6,13 @@
 ################################################################################
 OS_TYPE=$(uname)
 readonly OS_TYPE
-readonly DIRCOLORS_CONFIG=/etc/DIR_COLORS
 
 ################################################################################
 # Environment Variables
 ################################################################################
 export VISUAL="emacs -nw"
 export EDITOR="$VISUAL"
-
-TODAY=$(date '+%F_%s')
-export TODAY
+export TODAY=$(date '+%F_%s')
 
 # GREP_OPTIONS no longer supported on fedora and have to use aliases.
 export GREP_COLOR='0;31'
@@ -70,27 +67,20 @@ fi
 if [[ $(id -u) -eq 0 ]]; then
     # tput sgr0 - turns off attributes and returns text to normal state.
     # export PS1='\[\033[01;36m\]\u@\h\[\033[00m\]:\[\033[01;33m\]\W\[\033[00m\]\$ '
-    PS1="\[\033[01;36m\]\u@\h\[\033[00m\] [\t]:\[\033[01;33m\]\w\[\033[00m\]\n\\$ \[$(tput sgr0)\]"
-    export PS1
+    export PS1="\[\033[01;36m\]\u@\h\[\033[00m\] [\t]:\[\033[01;33m\]\w\[\033[00m\]\n\\$ \[$(tput sgr0)\]"
 else
     # export PS1='\[\033[01;31m\]\u@\h\[\033[00m\]:\[\033[01;33m\]\W\[\033[00m\]\$ '
-    PS1="\[\033[01;31m\]\u@\h\[\033[00m\] [\t]:\[\033[01;33m\]\w\[\033[00m\]\n\\$ \[$(tput sgr0)\]"
-    export PS1
+    export PS1="\[\033[01;31m\]\u@\h\[\033[00m\] [\t]:\[\033[01;33m\]\w\[\033[00m\]\n\\$ \[$(tput sgr0)\]"
 fi
 ################################################################################
 # Set color variables
 ################################################################################
 # Enable color output
 export CLICOLOR=1
-# Linux uses LS_COLORS -  http://www.arwin.net/tech/bash.php but we can use
-# dircolors to make it easier to manage.
-if [[ -f "$DIRCOLORS_CONFIG" ]]; then
-    test -r "$DIRCOLORS_CONFIG" && eval "$(dircolors "$DIRCOLORS_CONFIG")"
-else
-    export LS_COLORS='no=00:fi=00:di=01;36:ln=01;34:pi=40;33:so=01;35:do=01;35:bd=40;33;01:cd=40;33;01:or=40;31;01:ex=01;32:*.tar=01;31:*.tgz=01;31:*.arj=01;31:*.taz=01;31:*.lzh=01;31:*.zip=01;31:*.z=01;31:*.Z=01;31:*.gz=01;31:*.bz2=01;31:*.deb=01;31:*.rpm=01;31:*.jar=01;31:*.jpg=01;35:*.jpeg=01;35:*.gif=01;35:*.bmp=01;35:*.pbm=01;35:*.pgm=01;35:*.ppm=01;35:*.tga=01;35:*.xbm=01;35:*.xpm=01;35:*.tif=01;35:*.tiff=01;35:*.png=01;35:*.mov=01;35:*.mpg=01;35:*.mpeg=01;35:*.avi=01;35:*.fli=01;35:*.gl=01;35:*.dl=01;35:*.xcf=01;35:*.xwd=01;35:*.ogg=01;35:*.mp3=01;35:*.wav=01;35:'
-fi
+# Linux uses LS_COLORS - http://www.arwin.net/tech/bash.php but we can use dircolors to make it easier to manage.
+export LS_COLORS='no=00:fi=00:di=01;36:ln=01;34:pi=33:so=01;35:do=01;35:bd=01;33:cd=01;33:or=01;31:ex=01;32:ow=01;36:tw=01;36:*.tar=01;31:*.tgz=01;31:*.arj=01;31:*.taz=01;31:*.lzh=01;31:*.zip=01;31:*.z=01;31:*.Z=01;31:*.gz=01;31:*.bz2=01;31:*.deb=01;31:*.rpm=01;31:*.jar=01;31:*.jpg=01;35:*.jpeg=01;35:*.gif=01;35:*.bmp=01;35:*.pbm=01;35:*.pgm=01;35:*.ppm=01;35:*.tga=01;35:*.xbm=01;35:*.xpm=01;35:*.tif=01;35:*.tiff=01;35:*.png=01;35:*.mov=01;35:*.mpg=01;35:*.mpeg=01;35:*.avi=01;35:*.fli=01;35:*.gl=01;35:*.dl=01;35:*.xcf=01;35:*.xwd=01;35:*.ogg=01;35:*.mp3=01;35:*.wav=01;35:'
 # OSX uses LSCOLORS - http://softwaregravy.wordpress.com/2010/10/16/ls-colors-for-mac/
-export LSCOLORS="GxExcxdxcxegedabagacad"
+export LSCOLORS="GxExFxdxCxdxdxBxBxGxGx"
 
 ################################################################################
 # PATH variable
@@ -159,9 +149,7 @@ fi
 if [[ ! -f "$HOME/.ssh/known_hosts" ]]; then
     touch "$HOME/.ssh/known_hosts"
 fi
-
-complete -o bashdefault -o default -o nospace -F _complete_hosts ssh 2>/dev/null \
-    || complete -o default -o nospace -F _complete_hosts ssh
+complete -o bashdefault -o default -o nospace -F _complete_hosts ssh 2>/dev/null || complete -o default -o nospace -F _complete_hosts ssh
 
 ################################################################################
 # Create the global hook tempate directory
@@ -183,6 +171,9 @@ fi
 if [[ -f "$HOME/.bashrc" ]]; then
     source "$HOME/.bashrc"
 fi
+################################################################################
+# iterm2 (OSX)
+################################################################################
 # For iterm2
 test -e "${HOME}/.iterm2_shell_integration.bash" && source "${HOME}/.iterm2_shell_integration.bash"
 
