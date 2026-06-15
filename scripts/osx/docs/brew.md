@@ -34,7 +34,8 @@ brew install emacs-plus@31 --with-native-comp
 ### CLI Tools
 
 ```bash
-brew install bat glab gh aspell shellcheck marksman taplo pipx bash-completion@2
+brew install bat glab gh aspell shellcheck marksman taplo pipx bash-completion@2 jq tree htop wget
+pipx install pydeps pre-commit
 ```
 
 | Package | Purpose |
@@ -48,6 +49,12 @@ brew install bat glab gh aspell shellcheck marksman taplo pipx bash-completion@2
 | `taplo` | TOML LSP / formatter |
 | `pipx` | Install Python CLI tools in isolated envs |
 | `bash-completion@2` | Enhanced bash tab completion |
+| `jq` | JSON processor |
+| `tree` | Directory tree viewer |
+| `htop` | Interactive process viewer |
+| `wget` | File downloader |
+| `pydeps` (pipx) | Python module dependency visualization |
+| `pre-commit` (pipx) | Git pre-commit hook manager |
 
 After installing `bash-completion@2`, source it in your `~/.bash_profile` or `~/.bashrc`:
 
