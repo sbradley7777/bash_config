@@ -34,7 +34,7 @@ brew install emacs-plus@31 --with-native-comp
 ### CLI Tools
 
 ```bash
-brew install bat glab gh aspell shellcheck marksman taplo pipx bash-completion@2 jq tree htop wget
+brew install bat glab gh aspell shellcheck marksman taplo pipx bash-completion@2 jq tree htop wget coreutils
 pipx install pydeps pre-commit
 ```
 
@@ -53,6 +53,7 @@ pipx install pydeps pre-commit
 | `tree` | Directory tree viewer |
 | `htop` | Interactive process viewer |
 | `wget` | File downloader |
+| `coreutils` | GNU core utilities (replaces macOS BSD variants) |
 | `pydeps` (pipx) | Python module dependency visualization |
 | `pre-commit` (pipx) | Git pre-commit hook manager |
 
